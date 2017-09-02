@@ -1,0 +1,23 @@
+#lang racket
+
+(require rackunit)
+(require "exercise-1.29.rkt")
+
+(check-equal? (sort '(8 2 5 2 3)) '(2 2 3 5 8))
+(check-equal? (sort '()) '())
+(check-equal? (sort '(1)) '(1))
+(check-equal? (sort '(1 1)) '(1 1))
+(check-equal? (sort '(1 1 1)) '(1 1 1))
+(check-equal? (sort '(1 2)) '(1 2))
+(check-equal? (sort '(1 2 3)) '(1 2 3))
+(check-equal? (sort '(1 3 2)) '(1 2 3))
+(check-equal? (sort '(2 1 3)) '(1 2 3))
+(check-equal? (sort '(2 3 1)) '(1 2 3))
+(check-equal? (sort '(3 1 2)) '(1 2 3))
+(check-equal? (sort '(3 2 1)) '(1 2 3))
+(check-equal? (sort '(3 2 1)) '(1 2 3))
+(check-equal? (sort '(9 8 7 6 5 4 3 2 1 0)) '(0 1 2 3 4 5 6 7 8 9))
+(check-equal? (sort '(9 8 5 7 6 5 4 3 5 2 1 0)) '(0 1 2 3 4 5 5 5 6 7 8 9))
+(check-equal? (sort '(0 1 2 3 4 5 6 7 8 9)) '(0 1 2 3 4 5 6 7 8 9))
+(check-equal? (sort '(9 5 2 7 5 5 9 7 1 9 0 0 9 8 1 1 0 2 7 9 3 0 6 9 4 7 1 2 0 2 8 7 0 7 4 7 9 8 5 9 9 8 4 9 7 7 8 1))
+              '(0 0 0 0 0 0 1 1 1 1 1 2 2 2 2 3 4 4 4 5 5 5 5 6 7 7 7 7 7 7 7 7 7 8 8 8 8 8 9 9 9 9 9 9 9 9 9 9))
