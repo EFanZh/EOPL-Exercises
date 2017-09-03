@@ -1,7 +1,5 @@
 #lang racket
 
-(require profile)
-(require optimization-coach)
 (require rackunit)
 (require "exercise-2.1.rkt")
 
