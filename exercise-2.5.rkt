@@ -6,7 +6,7 @@
 ;; extend-env builds an environment that looks like
 ;;
 ;;          ┌───┬───┐
-;;          │ ╷ │  ╶┼─► saved-env
+;;          │ ╷ │ ╶─┼─► saved-env
 ;;          └─┼─┴───┘
 ;;            ▼
 ;;          ┌───┬───┐
