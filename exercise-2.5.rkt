@@ -23,14 +23,14 @@
     '()))
 
 (define apply-env
-  (lambda (env var)
+  (lambda (env search-var)
     (let ([head (car env)])
-      (if (eqv? (car head) var)
+      (if (eqv? (car head) search-var)
           (cdr head)
-          (apply-env (cdr env) var)))))
+          (apply-env (cdr env) search-var)))))
 
 (define extend-env
-  (lambda (var v env)
-    (cons (cons var v) env)))
+  (lambda (var val env)
+    (cons (cons var val) env)))
 
 (provide empty-env apply-env extend-env)
