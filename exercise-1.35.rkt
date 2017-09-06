@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.35 [🟉🟉🟉] Write a procedure number-leaves that takes a bintree, and produces a bintree like the original,
+;; Exercise 1.35 [★★★] Write a procedure number-leaves that takes a bintree, and produces a bintree like the original,
 ;; except the contents of the leaves are numbered starting from 0. For example,
 ;;
 ;;     (number-leaves

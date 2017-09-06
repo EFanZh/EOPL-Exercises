@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.18 [🟉] (swapper s1 s2 slist) returns a list the same as slist, but with all occurrences of s1 replaced by
+;; Exercise 1.18 [★] (swapper s1 s2 slist) returns a list the same as slist, but with all occurrences of s1 replaced by
 ;; s2 and all occurrences of s2 replaced by s1.
 ;;
 ;;     > (swapper 'a 'd '(a b c d))

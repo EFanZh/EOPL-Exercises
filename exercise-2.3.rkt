@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 2.3 [🟉🟉] Define a representation of all the integers (negative and nonnegative) as diff-trees, where a
+;; Exercise 2.3 [★★] Define a representation of all the integers (negative and nonnegative) as diff-trees, where a
 ;; diff-tree is a list defined by the grammar
 ;;
 ;; Diff-tree ::= (one) | (diff Diff-tree Diff-tree)
@@ -32,7 +32,7 @@
     (if (eqv? (car n) 'one)
         1
         (- (interpret (cadr n))
-           (interpret (caddr n)))))) 
+           (interpret (caddr n))))))
 
 (define is-zero?
   (lambda (n)

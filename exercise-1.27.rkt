@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.27 [🟉🟉] (flatten slist) returns a list of the symbols contained in slist in the order in which they occur
+;; Exercise 1.27 [★★] (flatten slist) returns a list of the symbols contained in slist in the order in which they occur
 ;; when slist is printed. Intuitively, flatten removes all the inner parentheses from its argument.
 ;;
 ;;     > (flatten '(a b c))

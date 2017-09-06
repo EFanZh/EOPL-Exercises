@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.17 [🟉] (down lst) wraps parentheses around each top-level element of lst.
+;; Exercise 1.17 [★] (down lst) wraps parentheses around each top-level element of lst.
 ;;
 ;;     > (down '(1 2 3))
 ;;     ((1) (2) (3))

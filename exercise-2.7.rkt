@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 2.7 [🟉] Rewrite apply-env in figure 2.1 to give a more informative error message.
+;; Exercise 2.7 [★] Rewrite apply-env in figure 2.1 to give a more informative error message.
 
 (define empty-env
   (lambda ()

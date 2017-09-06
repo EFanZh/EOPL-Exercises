@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.25 [🟉🟉] (exists? pred lst) returns #t if any element of lst satisfies pred, and returns #f otherwise.
+;; Exercise 1.25 [★★] (exists? pred lst) returns #t if any element of lst satisfies pred, and returns #f otherwise.
 ;;
 ;;     > (exists? number? '(a b c 3 e))
 ;;     #t

@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.29 [🟉🟉] (sort loi) returns a list of the elements of loi in ascending order.
+;; Exercise 1.29 [★★] (sort loi) returns a list of the elements of loi in ascending order.
 ;;
 ;;     > (sort '(8 2 5 2 3))
 ;;     (2 2 3 5 8)

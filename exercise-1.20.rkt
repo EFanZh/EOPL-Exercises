@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.20 [🟉] (count-occurrences s slist) returns the number of occurrences of s in slist.
+;; Exercise 1.20 [★] (count-occurrences s slist) returns the number of occurrences of s in slist.
 ;;
 ;;     > (count-occurrences 'x '((f x) y (((x z) x))))
 ;;     3

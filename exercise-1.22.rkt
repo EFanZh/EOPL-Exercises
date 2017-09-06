@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.22 [🟉🟉] (filter-in pred lst) returns the list of those elements in lst that satisfy the predicate pred.
+;; Exercise 1.22 [★★] (filter-in pred lst) returns the list of those elements in lst that satisfy the predicate pred.
 ;;
 ;;     > (filter-in number? '(a 2 (1 3) b 7))
 ;;     (2 7)

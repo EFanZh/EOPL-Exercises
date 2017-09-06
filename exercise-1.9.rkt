@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.9 [🟉🟉] Define remove, which is like remove-first, except that it removes all occurrences of a given
+;; Exercise 1.9 [★★] Define remove, which is like remove-first, except that it removes all occurrences of a given
 ;; symbol from a list of symbols, not just the first.
 
 (define remove

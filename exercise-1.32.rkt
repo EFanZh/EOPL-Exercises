@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.32 [🟉] Write a procedure double-tree that takes a bintree, as represented in definition 1.1.7, and
+;; Exercise 1.32 [★] Write a procedure double-tree that takes a bintree, as represented in definition 1.1.7, and
 ;; produces another bintree like the original, but with all the integers in the leaves doubled.
 
 (require "exercise-1.31.rkt")

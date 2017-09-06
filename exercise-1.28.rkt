@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.28 [🟉🟉] (merge loi1 loi2), where loi1 and loi2 are lists of integers that are sorted in ascending order,
+;; Exercise 1.28 [★★] (merge loi1 loi2), where loi1 and loi2 are lists of integers that are sorted in ascending order,
 ;; returns a sorted list of all the integers in loi1 and loi2.
 ;;
 ;;     > (merge '(1 4) '(1 2 8))

@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.7 [🟉🟉] The error message from nth-element is uninformative. Rewrite nth-element so that it produces a
+;; Exercise 1.7 [★★] The error message from nth-element is uninformative. Rewrite nth-element so that it produces a
 ;; more informative error message, such as “(a b c) does not have 8 elements.”
 
 (define report-list-too-short

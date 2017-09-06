@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.36 [🟉🟉🟉] Write a procedure g such that number-elements from page 23 could be defined as
+;; Exercise 1.36 [★★★] Write a procedure g such that number-elements from page 23 could be defined as
 ;;
 ;;     (define number-elements
 ;;       (lambda (lst)

@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.21 [🟉🟉] (product sos1 sos2), where sos1 and sos2 are each a list of symbols without repetitions, returns
+;; Exercise 1.21 [★★] (product sos1 sos2), where sos1 and sos2 are each a list of symbols without repetitions, returns
 ;; a list of 2-lists that represents the Cartesian product of sos1 and sos2. The 2-lists may appear in any order.
 ;;
 ;;     > (product '(a b c) '(x y))

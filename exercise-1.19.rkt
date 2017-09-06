@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.19 [🟉] (list-set lst n x) returns a list like lst, except that the n-th element, using zero-based
+;; Exercise 1.19 [★] (list-set lst n x) returns a list like lst, except that the n-th element, using zero-based
 ;; indexing, is x.
 ;;
 ;;     > (list-set '(a b c d) 2 '(1 2))

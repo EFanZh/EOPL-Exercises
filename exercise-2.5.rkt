@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 2.5 [🟉] We can use any data structure for representing environments, if we can distinguish empty
+;; Exercise 2.5 [★] We can use any data structure for representing environments, if we can distinguish empty
 ;; environments from non-empty ones, and in which one can extract the pieces of a non-empty environment. Implement
 ;; environments using a representation in which the empty environment is represented as the empty list, and in which
 ;; extend-env builds an environment that looks like

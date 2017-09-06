@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 1.15 [🟉] (duple n x) returns a list containing n copies of x.
+;; Exercise 1.15 [★] (duple n x) returns a list containing n copies of x.
 ;;
 ;;     > (duple 2 3)
 ;;     (3 3)
