@@ -1,7 +1,7 @@
 #lang eopl
 
 ;; Exercise 1.33 [★★] Write a procedure mark-leaves-with-red-depth that takes a bintree (definition 1.1.7), and
-;; produces a bintree of the same shape as the original, except that in the new tree, each leaf contains the integer of
+;; produces a bintree of the same shape as the original, except that in the new tree, each leaf contains the number of
 ;; nodes between it and the root that contain the symbol red. For example, the expression
 ;;
 ;; (mark-leaves-with-red-depth

@@ -1,7 +1,7 @@
 #lang eopl
 
-;; Exercise 2.14 [★★] Extend the representation of the preceding exercise to include a third procedure that implements
-;; has-binding? (see exercise 2.9).
+;; Exercise 2.15 [★] Implement the lambda-calculus expression interface for the representation specified by the grammar
+;; above.
 
 (define var-exp
   (lambda (var)

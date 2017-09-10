@@ -22,7 +22,6 @@
 ;;    for the diff-tree representation, and should do its work in a constant amount of time (independent of the size of
 ;;    its inputs). In particular, it should not be recursive.
 
-
 (define zero
   (lambda ()
     '(diff (one) (one))))
