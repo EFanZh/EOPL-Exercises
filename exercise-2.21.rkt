@@ -3,14 +3,10 @@
 ;; Exercise 2.21 [★] Implement the data type of environments, as in section 2.2.2, using define-datatype. Then include
 ;; has-binding? of exercise 2.9.
 
-(define scheme-value?
-  (lambda (value)
-    #t))
-
 (define-datatype env-type env?
   (empty-env)
   (extend-env [var symbol?]
-              [val scheme-value?]
+              [val always?]
               [env env?]))
 
 (define apply-env

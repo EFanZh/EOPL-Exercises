@@ -35,4 +35,4 @@
                                             (bintree-to-list left)
                                             (bintree-to-list right))])))
 
-(provide leaf-node interior-node bintree-to-list)
+(provide bintree leaf-node interior-node bintree-to-list)

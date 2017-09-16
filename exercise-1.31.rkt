@@ -5,8 +5,8 @@
 ;; which extract the components of a node. contents-of should work on both leaves and interior nodes.
 
 (define leaf
-  (lambda (int)
-    int))
+  (lambda (num)
+    num))
 
 (define interior-node
   (lambda (symbol left-child right-child)

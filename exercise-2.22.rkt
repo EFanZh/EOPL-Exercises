@@ -2,14 +2,10 @@
 
 ;; Exercise 2.22 [★] Using define-datatype, implement the stack data type of exercise 2.4.
 
-(define scheme-value?
-  (lambda (value)
-    #t))
-
 (define-datatype stack-type stack?
   (empty-stack)
   (push [saved-stack stack?]
-        [val scheme-value?]))
+        [val always?]))
 
 (define pop
   (lambda (stack)
