@@ -37,12 +37,12 @@
                                     [after-body (cdr after-bound-var-list)])
                                 (if (null? after-body)
                                     (lambda-exp bound-var (parse-expression body))
-                                    (report-error "null" after-body)))
-                              (report-error "a pair" after-bound-var-list))
-                          (report-error "null" after-bound-var))
+                                    (report-error "null after body" after-body)))
+                              (report-error "a pair after bound var list" after-bound-var-list))
+                          (report-error "null after bound var" after-bound-var))
                       (report-error "an identifier" bound-var)))
                 (report-error "a pair" bound-var-list)))
-          (report-error "a pair" after-lambda)))))
+          (report-error "a pair after lambda" after-lambda)))))
 
 (define parse-application-expression
   (lambda (datum)
@@ -52,9 +52,9 @@
           (let ([rand (car after-rator)]
                 [after-rand (cdr after-rator)])
             (if (null? after-rand)
-                (app-exp (parse-expression rator rand))
-                (report-error "null" after-rand)))
-          (report-error "a pair" after-rator)))))
+                (app-exp (parse-expression rator) (parse-expression rand))
+                (report-error "null after rand" after-rand)))
+          (report-error "a pair after rator" after-rator)))))
 
 (define parse-expression
   (lambda (datum)
