@@ -4,8 +4,8 @@
 ;; grammar:
 ;;
 ;;     Red-blue-tree    ::= Red-blue-subtree
-;;     Red-blue-subtree ::= (red-node Red-blue-subtree Red-blue-subtree) 
-;;                      ::= (blue-node {Red-blue-subtree}∗) 
+;;     Red-blue-subtree ::= (red-node Red-blue-subtree Red-blue-subtree)
+;;                      ::= (blue-node {Red-blue-subtree}*)
 ;;                      ::= (leaf-node Int)
 ;;
 ;; Write an equivalent definition using define-datatype, and use the resulting interface to write a procedure that takes
@@ -33,4 +33,4 @@
   (lambda (tree)
     (mark-leaves-with-red-depth-helper tree 0)))
 
-(provide cases red-blue-tree red-node blue-node leaf-node mark-leaves-with-red-depth)
+(provide red-blue-tree red-node blue-node leaf-node mark-leaves-with-red-depth)

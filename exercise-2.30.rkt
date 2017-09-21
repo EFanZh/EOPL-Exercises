@@ -66,4 +66,4 @@
                              (parse-application-expression datum))]
           [else (report-error "a symbol or pair" datum)])))
 
-(provide cases lc-exp var-exp lambda-exp app-exp parse-expression)
+(provide lc-exp var-exp lambda-exp app-exp parse-expression)

@@ -8,11 +8,11 @@
 ;;                ┌───────────────┐
 ;;                │ var-exp (var) │
 ;;                └───────────────┘
-;;            ::= (lambda ({Identifier}∗) Lc-exp)
+;;            ::= (lambda ({Identifier}*) Lc-exp)
 ;;                ┌──────────────────────────────┐
 ;;                │ lambda-exp (bound-vars body) │
 ;;                └──────────────────────────────┘
-;;            ::= (Lc-exp {Lc-exp}∗)
+;;            ::= (Lc-exp {Lc-exp}*)
 ;;                ┌───────────────────────┐
 ;;                │ app-exp (rator rands) │
 ;;                └───────────────────────┘
@@ -42,4 +42,4 @@
                                       (map parse-expression (cdr datum))))]
           [else (eopl:error 'parse-expression "Invalid expression: ~s" datum)])))
 
-(provide cases lc-exp var-exp lambda-exp app-exp parse-expression)
+(provide lc-exp var-exp lambda-exp app-exp parse-expression)
