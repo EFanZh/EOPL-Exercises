@@ -58,15 +58,9 @@
   (lambda (r)
     (cdr r)))
 
-(define init-env 
+(define init-env
   (lambda ()
-    (extend-env 'i
-                (num-val 1)
-                (extend-env 'v
-                            (num-val 5)
-                            (extend-env 'x
-                                        (num-val 10)
-                                        (empty-env))))))
+    (empty-env)))
 
 (define empty-env
   (lambda ()
@@ -94,6 +88,11 @@
 (define the-lexical-spec
   '([whitespace (whitespace) skip]
     [comment ("%" (arbno (not #\newline))) skip]
+    [unary-operator ((or "car" "cdr" "minus" "print")) string] ; Use a symbol output leads to error, don’t know why.
+    [binary-operator ((or "-" "*" "/" "+" "cons")) string]
+    [n-ary-operator ("list") string]
+    [bool-unary-operator ((or "null?" "zero?")) string]
+    [bool-binary-operator ((or "equal?" "greater?" "less?")) string]
     [identifier (letter (arbno (or letter digit "_" "-" "?"))) symbol]
     [number (digit (arbno digit)) number]
     [number ("-" digit (arbno digit)) number]))
@@ -101,25 +100,17 @@
 (define the-grammar
   '([program (expression) a-program]
     [expression (number) const-exp]
-    [expression ("-" "(" expression "," expression ")") diff-exp]
-    [expression ("zero?" "(" expression ")") zero?-exp]
-    [expression ("if" expression "then" expression "else" expression) if-exp]
+    [expression ("if" bool-exp "then" expression "else" expression) if-exp]
     [expression (identifier) var-exp]
     [expression ("let" identifier "=" expression "in" expression) let-exp]
-    [expression ("minus" "(" expression ")") minus-exp]
-    [expression ("+" "(" expression "," expression ")") add-exp]
-    [expression ("*" "(" expression "," expression ")") mul-exp]
-    [expression ("/" "(" expression "," expression ")") div-exp]
-    [expression ("equal?" "(" expression "," expression ")") equal?-exp]
-    [expression ("greater?" "(" expression "," expression ")") greater?-exp]
-    [expression ("less?" "(" expression "," expression ")") less?-exp]
-    [expression ("cons" "(" expression "," expression ")") cons-exp]
-    [expression ("car" "(" expression ")") car-exp]
-    [expression ("cdr" "(" expression ")") cdr-exp]
-    [expression ("null?" "(" expression ")") null?-exp]
     [expression ("emptylist") emptylist-exp]
-    [expression ("list" "(" (separated-list expression ",") ")") list-exp]
-    [expression ("cond" (arbno expression "==>" expression) "end") cond-exp]))
+    [expression ("cond" (arbno bool-exp "==>" expression) "end") cond-exp]
+    [expression (unary-operator "(" expression ")") unary-app-exp]
+    [expression (binary-operator "(" expression "," expression ")") binary-app-exp]
+    [expression (n-ary-operator "(" (separated-list expression ",") ")") n-ary-app-exp]
+    [expression (bool-exp) a-bool-exp]
+    [bool-exp (bool-unary-operator "(" expression ")") bool-unary-app-exp]
+    [bool-exp (bool-binary-operator "(" expression "," expression ")") bool-binary-app-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
   
@@ -137,86 +128,93 @@
     (cases program pgm
       [a-program (exp1) (value-of exp1 (init-env))])))
 
+(define convert-to-scheme-value
+  (lambda (val)
+    (cases expval val
+      [num-val (value) value]
+      [bool-val (boolean) boolean]
+      [emptylist-val () '()]
+      [pair-val (car cdr) (cons (convert-to-scheme-value car)
+                                (convert-to-scheme-value cdr))])))
+
 (define value-of
   (lambda (exp env)
     (cases expression exp
       [const-exp (num) (num-val num)]
       [var-exp (var) (apply-env env var)]
-      [diff-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
-                                  [val2 (value-of exp2 env)])
-                              (let ([num1 (expval->num val1)]
-                                    [num2 (expval->num val2)])
-                                (num-val (- num1 num2))))]
-      [zero?-exp (exp1) (let ([val1 (value-of exp1 env)])
-                          (let ([num1 (expval->num val1)])
-                            (if (zero? num1)
-                                (bool-val #t)
-                                (bool-val #f))))]
-      [if-exp (exp1 exp2 exp3) (let ((val1 (value-of exp1 env)))
+      [if-exp (exp1 exp2 exp3) (let* ([val1 (value-of-bool-exp exp1 env)])
                                  (if (expval->bool val1)
                                      (value-of exp2 env)
                                      (value-of exp3 env)))]
       [let-exp (var exp1 body) (let ([val1 (value-of exp1 env)])
                                  (value-of body
                                            (extend-env var val1 env)))]
-      [minus-exp (exp1) (num-val (- (expval->num (value-of exp1 env))))]
-      [add-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
-                                 [val2 (value-of exp2 env)])
-                             (let ([num1 (expval->num val1)]
-                                   [num2 (expval->num val2)])
-                               (num-val (+ num1 num2))))]
-      [mul-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
-                                 [val2 (value-of exp2 env)])
-                             (let ([num1 (expval->num val1)]
-                                   [num2 (expval->num val2)])
-                               (num-val (* num1 num2))))]
-      [div-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
-                                 [val2 (value-of exp2 env)])
-                             (let ([num1 (expval->num val1)]
-                                   [num2 (expval->num val2)])
-                               (num-val (quotient num1 num2))))]
-      [equal?-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
-                                    [val2 (value-of exp2 env)])
-                                (let ([num1 (expval->num val1)]
-                                      [num2 (expval->num val2)])
-                                  (bool-val (= num1 num2))))]
-      [greater?-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
-                                      [val2 (value-of exp2 env)])
-                                  (let ([num1 (expval->num val1)]
-                                        [num2 (expval->num val2)])
-                                    (bool-val (> num1 num2))))]
-      [less?-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
-                                   [val2 (value-of exp2 env)])
-                               (let ([num1 (expval->num val1)]
-                                     [num2 (expval->num val2)])
-                                 (bool-val (< num1 num2))))]
-      [cons-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
-                                  [val2 (value-of exp2 env)])
-                              (pair-val val1 val2))]
-      [car-exp (exp1) (cases expval (value-of exp1 env)
-                        [pair-val (car _) car]
-                        [else (eopl:error 'value-of "Not a pair")])]
-      [cdr-exp (exp1) (cases expval (value-of exp1 env)
-                        [pair-val (_ cdr) cdr]
-                        [else (eopl:error 'value-of "Not a pair")])]
-      [null?-exp (exp1) (cases expval (value-of exp1 env)
-                          [emptylist-val () (bool-val #t)]
-                          [else (bool-val #f)])]
       [emptylist-exp () (emptylist-val)]
-      [list-exp (exps) (let ([vals (map (lambda (exp) (value-of exp env)) exps)])
-                         (let loop ([vals vals])
-                           (if (null? vals)
-                               (emptylist-val)
-                               (pair-val (car vals) (loop (cdr vals))))))]
       [cond-exp (exps1 exps2) (let loop ([exps1 exps1]
                                          [exps2 exps2])
                                 (if (null? exps1)
                                     (eopl:error 'value-of "All cond tests failed.")
-                                    (let ([condition (value-of (car exps1) env)])
+                                    (let ([condition (value-of-bool-exp (car exps1) env)])
                                       (if (expval->bool condition)
                                           (value-of (car exps2) env)
                                           (loop (cdr exps1)
-                                                (cdr exps2))))))])))
+                                                (cdr exps2))))))]
+      [unary-app-exp (rator exp1) (let ([val (value-of exp1 env)])
+                                    (cond [(equal? rator "car") (cases expval val
+                                                                  [pair-val (car cdr) car]
+                                                                  [else (eopl:error 'value-of "Expect a pair.")])]
+                                          [(equal? rator "cdr") (cases expval val
+                                                                  [pair-val (car cdr) cdr]
+                                                                  [else (eopl:error 'value-of "Expect a pair.")])]
+                                          [(equal? rator "minus") (num-val (- (expval->num val)))]
+                                          [(equal? rator "print")
+                                           (let ([scheme-value (let loop ([val val])
+                                                                 (cases expval val
+                                                                   [num-val (value) value]
+                                                                   [bool-val (boolean) boolean]
+                                                                   [emptylist-val () '()]
+                                                                   [pair-val (car cdr) (cons (loop car)
+                                                                                             (loop cdr))]))])
+                                             (display scheme-value)
+                                             (newline)
+                                             (num-val 1))]
+                                          [else (eopl:error 'value-of-bool-exp "Unknown operator: ~s." rator)]))]
+      [binary-app-exp (rator exp1 exp2) (let ([val1 (value-of exp1 env)]
+                                              [val2 (value-of exp2 env)])
+                                          (cond [(equal? rator "-") (num-val (- (expval->num val1) (expval->num val2)))]
+                                                [(equal? rator "*") (num-val (* (expval->num val1) (expval->num val2)))]
+                                                [(equal? rator "/") (num-val (quotient (expval->num val1)
+                                                                                       (expval->num val2)))]
+                                                [(equal? rator "+") (num-val (+ (expval->num val1) (expval->num val2)))]
+                                                [(equal? rator "cons") (pair-val val1 val2)]
+                                                [else (eopl:error 'value-of-bool-exp "Unknown operator: ~s." rator)]))]
+      [n-ary-app-exp (rator exps) (let ([vals (map (lambda (e) (value-of e env)) exps)])
+                                    (cond [(equal? rator "list") (let loop ([vals vals])
+                                                                   (if (null? vals)
+                                                                       (emptylist-val)
+                                                                       (pair-val (car vals) (loop (cdr vals)))))]
+                                          [else (eopl:error 'value-of-bool-exp "Unknown operator: ~s." rator)]))]
+      [a-bool-exp (exp1) (value-of-bool-exp exp1 env)])))
+
+(define value-of-bool-exp
+  (lambda (exp env)
+    (cases bool-exp exp
+      [bool-unary-app-exp (rator exp1) (let ([val (value-of exp1 env)])
+                                         (cond [(equal? rator "null?") (bool-val (cases expval val
+                                                                                   [emptylist-val () #t]
+                                                                                   [else #f]))]
+                                               [(equal? rator "zero?") (bool-val (zero? (expval->num val)))]
+                                               [else (eopl:error 'value-of-bool-exp "Unknown operator: ~s." rator)]))]
+      [bool-binary-app-exp (rator exp1 exp2)
+                           (let ([val1 (value-of exp1 env)]
+                                 [val2 (value-of exp2 env)])
+                             (cond [(equal? rator "equal?") (bool-val (= (expval->num val1)
+                                                                         (expval->num val2)))]
+                                   [(equal? rator "greater?") (bool-val (> (expval->num val1)
+                                                                           (expval->num val2)))]
+                                   [(equal? rator "less?") (bool-val (< (expval->num val1)
+                                                                        (expval->num val2)))]
+                                   [else (eopl:error 'value-of-bool-exp "Unknown operator: ~s." rator)]))])))
 
 (define run
   (lambda (string)
