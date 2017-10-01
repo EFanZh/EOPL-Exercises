@@ -4,7 +4,10 @@
 
 (define-datatype expval expval?
   [num-val [value number?]]
-  [bool-val [boolean boolean?]])
+  [bool-val [boolean boolean?]]
+  [emptylist-val]
+  [pair-val [car expval?]
+            [cdr expval?]])
 
 (define expval->num
   (lambda (v)
@@ -109,7 +112,14 @@
     [expression ("/" "(" expression "," expression ")") div-exp]
     [expression ("equal?" "(" expression "," expression ")") equal?-exp]
     [expression ("greater?" "(" expression "," expression ")") greater?-exp]
-    [expression ("less?" "(" expression "," expression ")") less?-exp]))
+    [expression ("less?" "(" expression "," expression ")") less?-exp]
+    [expression ("cons" "(" expression "," expression ")") cons-exp]
+    [expression ("car" "(" expression ")") car-exp]
+    [expression ("cdr" "(" expression ")") cdr-exp]
+    [expression ("null?" "(" expression ")") null?-exp]
+    [expression ("emptylist") emptylist-exp]
+    [expression ("list" "(" (separated-list expression ",") ")") list-exp]
+    [expression ("cond" (arbno expression "==>" expression) "end") cond-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
   
@@ -179,10 +189,37 @@
                                    [val2 (value-of exp2 env)])
                                (let ([num1 (expval->num val1)]
                                      [num2 (expval->num val2)])
-                                 (bool-val (< num1 num2))))])))
+                                 (bool-val (< num1 num2))))]
+      [cons-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
+                                  [val2 (value-of exp2 env)])
+                              (pair-val val1 val2))]
+      [car-exp (exp1) (cases expval (value-of exp1 env)
+                        [pair-val (car _) car]
+                        [else (eopl:error 'value-of "Not a pair")])]
+      [cdr-exp (exp1) (cases expval (value-of exp1 env)
+                        [pair-val (_ cdr) cdr]
+                        [else (eopl:error 'value-of "Not a pair")])]
+      [null?-exp (exp1) (cases expval (value-of exp1 env)
+                          [emptylist-val () (bool-val #t)]
+                          [else (bool-val #f)])]
+      [emptylist-exp () (emptylist-val)]
+      [list-exp (exps) (let ([vals (map (lambda (exp) (value-of exp env)) exps)])
+                         (let loop ([vals vals])
+                           (if (null? vals)
+                               (emptylist-val)
+                               (pair-val (car vals) (loop (cdr vals))))))]
+      [cond-exp (exps1 exps2) (let loop ([exps1 exps1]
+                                         [exps2 exps2])
+                                (if (null? exps1)
+                                    (eopl:error 'value-of "All cond tests failed.")
+                                    (let ([condition (value-of (car exps1) env)])
+                                      (if (expval->bool condition)
+                                          (value-of (car exps2) env)
+                                          (loop (cdr exps1)
+                                                (cdr exps2))))))])))
 
 (define run
   (lambda (string)
     (value-of-program (scan&parse string))))
 
-(provide num-val bool-val run)
+(provide num-val bool-val emptylist-val pair-val run)
