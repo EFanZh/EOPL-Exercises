@@ -35,16 +35,8 @@
 (define extended-env-record
   (lambda (sym val old-env)
     (cons (list sym val) old-env)))
-  
+
 (define empty-env-record? null?)
-  
-(define environment?
-  (lambda (x)
-    (or (empty-env-record? x)
-        (and (pair? x)
-             (symbol? (car (car x)))
-             (expval? (cadr (car x)))
-             (environment? (cdr x))))))
 
 (define extended-env-record->sym
   (lambda (r)
@@ -58,14 +50,14 @@
   (lambda (r)
     (cdr r)))
 
+(define empty-env
+  (lambda ()
+    (empty-env-record)))
+
 (define init-env
   (lambda ()
     (empty-env)))
 
-(define empty-env
-  (lambda ()
-    (empty-env-record)))
-  
 (define empty-env? 
   (lambda (x)
     (empty-env-record? x)))
@@ -115,29 +107,9 @@
     [bool-exp (bool-binary-operator "(" expression "," expression ")") bool-binary-app-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
-  
-(define show-the-datatypes
-  (lambda () (sllgen:list-define-datatypes the-lexical-spec the-grammar)))
-  
+
 (define scan&parse
   (sllgen:make-string-parser the-lexical-spec the-grammar))
-  
-(define just-scan
-  (sllgen:make-string-scanner the-lexical-spec the-grammar))
-  
-(define value-of-program 
-  (lambda (pgm)
-    (cases program pgm
-      [a-program (exp1) (value-of exp1 (init-env))])))
-
-(define convert-to-scheme-value
-  (lambda (val)
-    (cases expval val
-      [num-val (value) value]
-      [bool-val (boolean) boolean]
-      [emptylist-val () '()]
-      [pair-val (car cdr) (cons (convert-to-scheme-value car)
-                                (convert-to-scheme-value cdr))])))
 
 (define value-of
   (lambda (exp env)
@@ -247,6 +219,11 @@
                                    [(equal? rator "less?") (bool-val (< (expval->num val1)
                                                                         (expval->num val2)))]
                                    [else (eopl:error 'value-of-bool-exp "Unknown operator: ~s." rator)]))])))
+
+(define value-of-program
+  (lambda (pgm)
+    (cases program pgm
+      [a-program (exp1) (value-of exp1 (init-env))])))
 
 (define run
   (lambda (string)
