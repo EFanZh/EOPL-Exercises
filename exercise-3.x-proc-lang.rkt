@@ -76,14 +76,14 @@
     [expression ("if" expression "then" expression "else" expression) if-exp]
     [expression (identifier) var-exp]
     [expression ("let" identifier "=" expression "in" expression) let-exp]
-    [expression ("proc" "(" identifier ")" expression) proc-exp]
-    [expression ("(" expression expression ")") call-exp]))
+    [expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp]
+    [expression ("(" expression (arbno expression) ")") call-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
 (define-datatype proc proc?
   (procedure
-   [var symbol?]
+   [vars (list-of symbol?)]
    [body expression?]
    [env environment?]))
 
@@ -118,9 +118,21 @@
 ;; Helpers.
 
 (define apply-procedure
-  (lambda (proc1 val)
+  (lambda (proc1 vals)
     (cases proc proc1
-      [procedure (var body saved-env) (value-of body (extend-env var val saved-env))])))
+      [procedure (vars body saved-env) (value-of body
+                                                 (let loop ([env saved-env]
+                                                            [vars vars]
+                                                            [vals vals])
+                                                   (if (null? vars)
+                                                       (if (null? vals)
+                                                           env
+                                                           (eopl:error 'apply-procedure "Too many arguments."))
+                                                       (if (null? vals)
+                                                           (eopl:error 'apply-procedure "Not enough arguments.")
+                                                           (loop (extend-env (car vars) (car vals) env)
+                                                                 (cdr vars)
+                                                                 (cdr vals))))))])))
 
 ;; Interpreter.
 
@@ -145,10 +157,10 @@
                                      (value-of exp3 env)))]
       [let-exp (var exp1 body) (let ([val1 (value-of exp1 env)])
                                  (value-of body (extend-env var val1 env)))]
-      [proc-exp (var body) (proc-val (procedure var body env))]
-      [call-exp (rator rand) (let ([proc (expval->proc (value-of rator env))]
-                                   [arg (value-of rand env)])
-                               (apply-procedure proc arg))])))
+      [proc-exp (vars body) (proc-val (procedure vars body env))]
+      [call-exp (rator rands) (let ([proc (expval->proc (value-of rator env))]
+                                    [args (map (lambda (rand) (value-of rand env)) rands)])
+                                (apply-procedure proc args))])))
 
 ;; Interfaces.
 
