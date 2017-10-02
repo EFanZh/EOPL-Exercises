@@ -102,7 +102,9 @@
     [expression (number) const-exp]
     [expression ("if" bool-exp "then" expression "else" expression) if-exp]
     [expression (identifier) var-exp]
-    [expression ("let" identifier "=" expression "in" expression) let-exp]
+    [expression ("let" (arbno identifier "=" expression) "in" expression) let-exp]
+    [expression ("let*" (arbno identifier "=" expression) "in" expression) let*-exp]
+    [expression ("unpack" (arbno identifier) "=" expression "in" expression) unpack-exp]
     [expression ("emptylist") emptylist-exp]
     [expression ("cond" (arbno bool-exp "==>" expression) "end") cond-exp]
     [expression (unary-operator "(" expression ")") unary-app-exp]
@@ -146,9 +148,39 @@
                                  (if (expval->bool val1)
                                      (value-of exp2 env)
                                      (value-of exp3 env)))]
-      [let-exp (var exp1 body) (let ([val1 (value-of exp1 env)])
-                                 (value-of body
-                                           (extend-env var val1 env)))]
+      [let-exp (vars exps body) (let ([vals (map (lambda (e) (value-of e env)) exps)])
+                                  (value-of body
+                                            (let loop ([env env]
+                                                       [vars vars]
+                                                       [vals vals])
+                                              (if (null? vars)
+                                                  env
+                                                  (loop (extend-env (car vars) (car vals) env)
+                                                        (cdr vars)
+                                                        (cdr vals))))))]
+      [let*-exp (vars exps body) (let loop ([env env]
+                                            [vars vars]
+                                            [exps exps])
+                                   (if (null? vars)
+                                       (value-of body env)
+                                       (loop (extend-env (car vars) (value-of (car exps) env) env)
+                                             (cdr vars)
+                                             (cdr exps))))]
+      [unpack-exp (vars exp1 body) (let loop ([env env]
+                                              [vars vars]
+                                              [vals (value-of exp1 env)])
+                                     (if (null? vars)
+                                         (cases expval vals
+                                           [emptylist-val () (value-of body env)]
+                                           [pair-val (car-vals cdr-vals) (eopl:error 'value-of
+                                                                                     "Too many values to unpack.")]
+                                           [else (eopl:error 'value-of "Expect a pair.")])
+                                         (cases expval vals
+                                           [emptylist-val () (eopl:error 'value-of "Not enough values to unpack.")]
+                                           [pair-val (car-vals cdr-vals) (loop (extend-env (car vars) car-vals env)
+                                                                               (cdr vars)
+                                                                               cdr-vals)]
+                                           [else (eopl:error 'value-of "Expect a pair.")])))]
       [emptylist-exp () (emptylist-val)]
       [cond-exp (exps1 exps2) (let loop ([exps1 exps1]
                                          [exps2 exps2])
