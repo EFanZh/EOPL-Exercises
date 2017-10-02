@@ -54,9 +54,7 @@
   (lambda ()
     (empty-env-record)))
 
-(define init-env
-  (lambda ()
-    (empty-env)))
+(define init-env empty-env)
 
 (define empty-env? 
   (lambda (x)
