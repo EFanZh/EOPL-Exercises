@@ -1,6 +1,9 @@
 #lang eopl
 
-;; This code is a implementation of an extended version of the PROC language.
+;; Exercise 3.22 [★★★] The concrete syntax of this section uses different syntax for a built-in operation, such as
+;; difference, from a procedure call. Modify the concrete syntax so that the user of this language need not know which
+;; operations are built-in and which are defined procedures. This exercise may range from very easy to hard, depending
+;; on the parsing technology being used.
 
 ;; Environments.
 
@@ -57,7 +60,13 @@
   (lambda ()
     (empty-env-record)))
 
-(define init-env empty-env)
+(define init-env
+  (lambda ()
+    (extend-env 'zero?
+                (proc-val (built-in-procedure 'zero?))
+                (extend-env '-
+                            (proc-val (built-in-procedure '-))
+                            (empty-env)))))
 
 ;; Data structures.
 
@@ -65,14 +74,17 @@
   '([whitespace (whitespace) skip]
     [comment ("%" (arbno (not #\newline))) skip]
     [identifier (letter (arbno (or letter digit "_" "-" "?"))) symbol]
+    [identifier ("-") symbol]
+    [identifier ("-"
+                 (arbno (or letter digit "_" "-" "?"))
+                 (or letter "_" "-" "?")
+                 (arbno (or letter digit "_" "-" "?"))) symbol]
     [number (digit (arbno digit)) number]
     [number ("-" digit (arbno digit)) number]))
 
 (define the-grammar
   '([program (expression) a-program]
     [expression (number) const-exp]
-    [expression ("-" "(" expression "," expression ")") diff-exp]
-    [expression ("zero?" "(" expression ")") zero?-exp]
     [expression ("if" expression "then" expression "else" expression) if-exp]
     [expression (identifier) var-exp]
     [expression ("let" identifier "=" expression "in" expression) let-exp]
@@ -84,7 +96,8 @@
 (define-datatype proc proc?
   [procedure [vars (list-of symbol?)]
              [body expression?]
-             [env environment?]])
+             [env environment?]]
+  [built-in-procedure [name symbol?]])
 
 (define-datatype expval expval?
   [num-val (value number?)]
@@ -131,7 +144,11 @@
                                                            (eopl:error 'apply-procedure "Not enough arguments.")
                                                            (loop (extend-env (car vars) (car vals) env)
                                                                  (cdr vars)
-                                                                 (cdr vals))))))])))
+                                                                 (cdr vals))))))]
+      [built-in-procedure (name) (cond [(eqv? name '-) (num-val (- (expval->num (car vals))
+                                                                   (expval->num (cadr vals))))]
+                                       [(eqv? name 'zero?) (bool-val (zero? (expval->num (car vals))))]
+                                       [else (eopl:error 'apply-procedure "Unknown built-in procedure.")])])))
 
 ;; Interpreter.
 
@@ -140,16 +157,6 @@
     (cases expression exp
       [const-exp (num) (num-val num)]
       [var-exp (var) (apply-env env var)]
-      [diff-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
-                                  [val2 (value-of exp2 env)])
-                              (let ([num1 (expval->num val1)]
-                                    [num2 (expval->num val2)])
-                                (num-val (- num1 num2))))]
-      [zero?-exp (exp1) (let ([val1 (value-of exp1 env)])
-                          (let ([num1 (expval->num val1)])
-                            (if (zero? num1)
-                                (bool-val #t)
-                                (bool-val #f))))]
       [if-exp (exp1 exp2 exp3) (let ([val1 (value-of exp1 env)])
                                  (if (expval->bool val1)
                                      (value-of exp2 env)
