@@ -116,6 +116,35 @@
 
 ;; Helpers.
 
+(define (filter-env env bound-vars exp)
+  (let loop ([result (empty-env)]
+             [bound-vars bound-vars]
+             [exp exp])
+    (cases expression exp
+      [var-exp (var) (if (memv var bound-vars)
+                         result
+                         (extend-env var (apply-env env var) result))]
+      [diff-exp (exp1 exp2) (loop (loop result bound-vars exp1) bound-vars exp2)]
+      [zero?-exp (exp1) (loop result bound-vars exp1)]
+      [if-exp (exp1 exp2 exp3) (loop (loop (loop result
+                                                 bound-vars
+                                                 exp1)
+                                           bound-vars
+                                           exp2)
+                                     bound-vars
+                                     exp3)]
+      [let-exp (var exp1 body) (loop (loop result bound-vars exp1)
+                                     (cons var bound-vars)
+                                     body)]
+      [proc-exp (vars body) (loop result (append vars bound-vars) body)]
+      [call-exp (rator rands) (let loop2 ([result (loop result bound-vars rator)]
+                                          [rands rands])
+                                (if (null? rands)
+                                    result
+                                    (loop2 (loop result bound-vars (car rands))
+                                           (cdr rands))))]
+      [else result])))
+
 (define apply-procedure
   (lambda (proc1 vals)
     (cases proc proc1
@@ -156,7 +185,7 @@
                                      (value-of exp3 env)))]
       [let-exp (var exp1 body) (let ([val1 (value-of exp1 env)])
                                  (value-of body (extend-env var val1 env)))]
-      [proc-exp (vars body) (proc-val (procedure vars body env))]
+      [proc-exp (vars body) (proc-val (procedure vars body (filter-env env vars body)))]
       [call-exp (rator rands) (let ([proc (expval->proc (value-of rator env))]
                                     [args (map (lambda (rand) (value-of rand env)) rands)])
                                 (apply-procedure proc args))])))
