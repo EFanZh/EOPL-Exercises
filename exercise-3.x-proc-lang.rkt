@@ -77,6 +77,7 @@
     [expression (identifier) var-exp]
     [expression ("let" identifier "=" expression "in" expression) let-exp]
     [expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp]
+    [expression ("traceproc" "(" (separated-list identifier ",") ")" expression) traceproc-exp]
     [expression ("(" expression (arbno expression) ")") call-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
@@ -84,7 +85,10 @@
 (define-datatype proc proc?
   [procedure [vars (list-of symbol?)]
              [body expression?]
-             [env environment?]])
+             [env environment?]]
+  [trace-procedure [vars (list-of symbol?)]
+                   [body expression?]
+                   [env environment?]])
 
 (define-datatype expval expval?
   [num-val (value number?)]
@@ -121,6 +125,7 @@
              [bound-vars bound-vars]
              [exp exp])
     (cases expression exp
+      [const-exp (num) result]
       [var-exp (var) (if (memv var bound-vars)
                          result
                          (extend-env var (apply-env env var) result))]
@@ -137,13 +142,13 @@
                                      (cons var bound-vars)
                                      body)]
       [proc-exp (vars body) (loop result (append vars bound-vars) body)]
+      [traceproc-exp (vars body) (loop result (append vars bound-vars) body)]
       [call-exp (rator rands) (let loop2 ([result (loop result bound-vars rator)]
                                           [rands rands])
                                 (if (null? rands)
                                     result
                                     (loop2 (loop result bound-vars (car rands))
-                                           (cdr rands))))]
-      [else result])))
+                                           (cdr rands))))])))
 
 (define apply-procedure
   (lambda (proc1 vals)
@@ -160,7 +165,25 @@
                                                            (eopl:error 'apply-procedure "Not enough arguments.")
                                                            (loop (extend-env (car vars) (car vals) env)
                                                                  (cdr vars)
-                                                                 (cdr vals))))))])))
+                                                                 (cdr vals))))))]
+      [trace-procedure (vars body saved-env) (let ([env (let loop ([env saved-env]
+                                                                   [vars vars]
+                                                                   [vals vals])
+                                                          (if (null? vars)
+                                                              (if (null? vals)
+                                                                  env
+                                                                  (eopl:error 'apply-procedure "Too many arguments."))
+                                                              (if (null? vals)
+                                                                  (eopl:error 'apply-procedure "Not enough arguments.")
+                                                                  (loop (extend-env (car vars) (car vals) env)
+                                                                        (cdr vars)
+                                                                        (cdr vals)))))])
+                                               (display "Entering procedure.")
+                                               (newline)
+                                               (let ([result (value-of body env)])
+                                                 (display "Exiting procedure.")
+                                                 (newline)
+                                                 result))])))
 
 ;; Interpreter.
 
@@ -186,6 +209,7 @@
       [let-exp (var exp1 body) (let ([val1 (value-of exp1 env)])
                                  (value-of body (extend-env var val1 env)))]
       [proc-exp (vars body) (proc-val (procedure vars body (filter-env env vars body)))]
+      [traceproc-exp (vars body) (proc-val (trace-procedure vars body (filter-env env vars body)))]
       [call-exp (rator rands) (let ([proc (expval->proc (value-of rator env))]
                                     [args (map (lambda (rand) (value-of rand env)) rands)])
                                 (apply-procedure proc args))])))
