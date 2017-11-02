@@ -37,7 +37,7 @@
               [bval expval?]
               [saved-env environment?]]
   [extend-env-rec [ids (list-of symbol?)]
-                  [bvar (list-of (list-of symbol?))]
+                  [bvars (list-of (list-of symbol?))]
                   [bodies (list-of expression?)]
                   [saved-env environment?]])
 
