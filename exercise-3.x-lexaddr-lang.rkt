@@ -17,12 +17,16 @@
     [expression ("-" "(" expression "," expression ")") diff-exp]
     [expression ("zero?" "(" expression ")") zero?-exp]
     [expression ("if" expression "then" expression "else" expression) if-exp]
+    [expression ("cond" (arbno expression "==>" expression) "end") cond-exp]
     [expression (identifier) var-exp]
     [expression ("let" identifier "=" expression "in" expression) let-exp]
+    [expression ("pack" "(" (separated-list expression ",") ")") pack-exp]
+    [expression ("unpack" (arbno identifier) "=" expression "in" expression) unpack-exp]
     [expression ("proc" "(" identifier ")" expression) proc-exp]
     [expression ("(" expression expression ")") call-exp]
     [expression ("%nameless-var" number) nameless-var-exp]
     [expression ("%let" expression "in" expression) nameless-let-exp]
+    [expression ("%unpack" expression "in" expression) nameless-unpack-exp]
     [expression ("%lexproc" expression) nameless-proc-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
@@ -66,9 +70,26 @@
       [if-exp (exp1 exp2 exp3) (if-exp (translation-of exp1 senv)
                                        (translation-of exp2 senv)
                                        (translation-of exp3 senv))]
+      [cond-exp (conditions results) (cond-exp (map (lambda (exp)
+                                                      (translation-of exp senv))
+                                                    conditions)
+                                               (map (lambda (exp)
+                                                      (translation-of exp senv))
+                                                    results))]
       [var-exp (var) (nameless-var-exp (apply-senv senv var))]
       [let-exp (var exp1 body) (nameless-let-exp (translation-of exp1 senv)
                                                  (translation-of body (extend-senv var senv)))]
+      [pack-exp (items) (pack-exp (map (lambda (exp)
+                                         (translation-of exp senv))
+                                       items))]
+      [unpack-exp (vars exp body) (nameless-unpack-exp (translation-of exp senv)
+                                                       (translation-of body
+                                                                       (let loop ([senv senv]
+                                                                                  [vars vars])
+                                                                         (if (null? vars)
+                                                                             senv
+                                                                             (loop (extend-senv (car vars) senv)
+                                                                                   (cdr vars))))))]
       [proc-exp (var body) (nameless-proc-exp (translation-of body (extend-senv var senv)))]
       [call-exp (rator rand) (call-exp (translation-of rator senv)
                                        (translation-of rand senv))]
@@ -101,7 +122,8 @@
 (define-datatype expval expval?
   [num-val [value number?]]
   [bool-val [boolean boolean?]]
-  [proc-val [proc proc?]])
+  [proc-val [proc proc?]]
+  [pack-val [items (list-of expval?)]])
 
 (define expval-extractor-error
   (lambda (variant value)
@@ -128,6 +150,12 @@
       [proc-val (proc) proc]
       [else (expval-extractor-error 'proc v)])))
 
+(define expval->pack
+  (lambda (v)
+    (cases expval v
+      [pack-val (items) items]
+      [else (expval-extractor-error 'proc v)])))
+
 ;; Interpreter.
 
 (define apply-procedure
@@ -148,12 +176,28 @@
       [if-exp (exp0 exp1 exp2) (if (expval->bool (value-of exp0 nameless-env))
                                    (value-of exp1 nameless-env)
                                    (value-of exp2 nameless-env))]
+      [cond-exp (conditions results) (let loop ([conditions conditions]
+                                                [results results])
+                                       (cond [(null? conditions) (eopl:error 'value-of "All cond tests failed.")]
+                                             [(expval->bool (value-of (car conditions) nameless-env))
+                                              (value-of (car results) nameless-env)]
+                                             [else (loop (cdr conditions)
+                                                         (cdr results))]))]
       [call-exp (rator rand) (let ([proc (expval->proc (value-of rator nameless-env))]
                                    [arg (value-of rand nameless-env)])
                                (apply-procedure proc arg))]
       [nameless-var-exp (n) (apply-nameless-env nameless-env n)]
       [nameless-let-exp (exp1 body) (let ([val (value-of exp1 nameless-env)])
                                       (value-of body (extend-nameless-env val nameless-env)))]
+      [pack-exp (exps) (pack-val (map (lambda (exp)
+                                        (value-of exp nameless-env))
+                                      exps))]
+      [nameless-unpack-exp (exp body) (let loop ([nameless-env nameless-env]
+                                                 [vals (expval->pack (value-of exp nameless-env))])
+                                        (if (null? vals)
+                                            (value-of body nameless-env)
+                                            (loop (extend-nameless-env (car vals) nameless-env)
+                                                  (cdr vals))))]
       [nameless-proc-exp (body) (proc-val (procedure body nameless-env))]
       [else (eopl:error 'value-of "Illegal expression in translated code: ~s" exp)])))
 

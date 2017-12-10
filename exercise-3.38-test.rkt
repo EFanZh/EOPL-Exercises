@@ -1,7 +1,7 @@
 #lang racket
 
 (require rackunit)
-(require "exercise-3.x-let-lang.rkt")
+(require "exercise-3.x-lexaddr-lang.rkt")
 
 (check-equal? (run "cond zero?(1) ==> 2
                          zero?(3) ==> 4
