@@ -22,11 +22,14 @@
     [expression ("let" identifier "=" expression "in" expression) let-exp]
     [expression ("pack" "(" (separated-list expression ",") ")") pack-exp]
     [expression ("unpack" (arbno identifier) "=" expression "in" expression) unpack-exp]
+    [expression ("letrec" identifier "(" identifier ")" "=" expression "in" expression) letrec-exp]
     [expression ("proc" "(" identifier ")" expression) proc-exp]
     [expression ("(" expression expression ")") call-exp]
     [expression ("%nameless-var" number) nameless-var-exp]
     [expression ("%let" expression "in" expression) nameless-let-exp]
     [expression ("%unpack" expression "in" expression) nameless-unpack-exp]
+    [expression ("%letrec" expression "in" expression) nameless-letrec-exp]
+    [expression ("%letrec-var" number) nameless-letrec-var-exp]
     [expression ("%lexproc" expression) nameless-proc-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
@@ -36,23 +39,33 @@
 
 ;; Static environments.
 
-(define empty-senv
-  (lambda ()
-    '()))
-
-(define extend-senv
-  (lambda (var senv)
-    (cons var senv)))
+(define-datatype static-environment static-environment?
+  [empty-senv]
+  [extend-senv [var symbol?]
+               [saved-senv static-environment?]]
+  [extend-senv-rec [var symbol?]
+                   [saved-senv static-environment?]])
 
 (define report-unbound-var
   (lambda (var)
     (eopl:error 'translation-of "unbound variable in code: ~s" var)))
 
+(define-datatype lexical-address lexical-address?
+  [normal-lex-addr [depth integer?]]
+  [letrec-lex-addr [depth integer?]])
+
 (define apply-senv
   (lambda (senv var)
-    (cond [(null? senv) (report-unbound-var var)]
-          [(eqv? var (car senv)) 0]
-          [else (+ 1 (apply-senv (cdr senv) var))])))
+    (let loop ([senv senv]
+               [depth 0])
+      (cases static-environment senv
+        [empty-senv () (report-unbound-var var)]
+        [extend-senv (saved-var saved-senv) (if (eqv? var saved-var)
+                                                (normal-lex-addr depth)
+                                                (loop saved-senv (+ depth 1)))]
+        [extend-senv-rec (saved-var saved-senv) (if (eqv? var saved-var)
+                                                    (letrec-lex-addr depth)
+                                                    (loop saved-senv (+ depth 1)))]))))
 
 ;; Translator.
 
@@ -76,7 +89,9 @@
                                                (map (lambda (exp)
                                                       (translation-of exp senv))
                                                     results))]
-      [var-exp (var) (nameless-var-exp (apply-senv senv var))]
+      [var-exp (var) (cases lexical-address (apply-senv senv var)
+                       [normal-lex-addr (depth) (nameless-var-exp depth)]
+                       [letrec-lex-addr (depth) (nameless-letrec-var-exp depth)])]
       [let-exp (var exp1 body) (nameless-let-exp (translation-of exp1 senv)
                                                  (translation-of body (extend-senv var senv)))]
       [pack-exp (items) (pack-exp (map (lambda (exp)
@@ -90,6 +105,10 @@
                                                                              senv
                                                                              (loop (extend-senv (car vars) senv)
                                                                                    (cdr vars))))))]
+      [letrec-exp (p-name b-var p-body letrec-body) (let ([rec-env (extend-senv-rec p-name senv)])
+                                                      (nameless-letrec-exp (translation-of p-body
+                                                                                           (extend-senv b-var rec-env))
+                                                                           (translation-of letrec-body rec-env)))]
       [proc-exp (var body) (nameless-proc-exp (translation-of body (extend-senv var senv)))]
       [call-exp (rator rand) (call-exp (translation-of rator senv)
                                        (translation-of rand senv))]
@@ -112,6 +131,9 @@
 (define apply-nameless-env
   (lambda (nameless-env n)
     (list-ref nameless-env n)))
+
+(define (parent-nameless-env nameless-env n)
+  (list-tail nameless-env n))
 
 ;; Data structures.
 
@@ -187,6 +209,10 @@
                                    [arg (value-of rand nameless-env)])
                                (apply-procedure proc arg))]
       [nameless-var-exp (n) (apply-nameless-env nameless-env n)]
+      [nameless-letrec-var-exp (n)  (let ([partial-proc (expval->proc (apply-nameless-env nameless-env n))]
+                                          [real-env (parent-nameless-env nameless-env n)])
+                                      (cases proc partial-proc
+                                        [procedure (body unused-env) (proc-val (procedure body real-env))]))]
       [nameless-let-exp (exp1 body) (let ([val (value-of exp1 nameless-env)])
                                       (value-of body (extend-nameless-env val nameless-env)))]
       [pack-exp (exps) (pack-val (map (lambda (exp)
@@ -198,6 +224,9 @@
                                             (value-of body nameless-env)
                                             (loop (extend-nameless-env (car vals) nameless-env)
                                                   (cdr vals))))]
+      [nameless-letrec-exp (p-body letrec-body) (let ([partial-proc (proc-val (procedure p-body (empty-nameless-env)))])
+                                                  (value-of letrec-body
+                                                            (extend-nameless-env partial-proc nameless-env)))]
       [nameless-proc-exp (body) (proc-val (procedure body nameless-env))]
       [else (eopl:error 'value-of "Illegal expression in translated code: ~s" exp)])))
 
