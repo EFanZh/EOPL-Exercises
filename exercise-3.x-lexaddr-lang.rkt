@@ -30,7 +30,7 @@
     [expression ("%unpack" expression "in" expression) nameless-unpack-exp]
     [expression ("%letrec" expression "in" expression) nameless-letrec-exp]
     [expression ("%nameless-letrec-var" number number) nameless-letrec-var-exp]
-    [expression ("%lexproc" expression) nameless-proc-exp]))
+    [expression ("%lexproc" "[" (arbno number number) "]" expression) nameless-proc-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
@@ -77,7 +77,102 @@
                                                          [else (loop2 (cdr saved-vars)
                                                                       (+ position 1))]))]))))
 
+(define (has-binding? senv var)
+  (cases static-environment senv
+    [empty-senv () #f]
+    [extend-senv (saved-vars saved-senv) (or (memv var saved-vars)
+                                             (has-binding? saved-senv var))]
+    [extend-senv-rec (saved-vars saved-senv) (or (memv var saved-vars)
+                                                 (has-binding? saved-senv var))]))
+
 ;; Translator.
+
+(define (get-free-variables exp senv)
+  (let helper ([exp exp]
+               [senv senv]
+               [free-variables '()])
+    (cases expression exp
+      [const-exp (num) free-variables]
+      [diff-exp (exp1 exp2) (helper exp2
+                                    senv
+                                    (helper exp1
+                                            senv
+                                            free-variables))]
+      [zero?-exp (exp1) (helper exp1 senv free-variables)]
+      [if-exp (exp1 exp2 exp3) (helper exp3
+                                       senv
+                                       (helper exp2
+                                               senv
+                                               (helper exp1
+                                                       senv
+                                                       free-variables)))]
+      [cond-exp (conditions results) (let loop ([conditions conditions]
+                                                [results results]
+                                                [free-variables free-variables])
+                                       (if (null? conditions)
+                                           free-variables
+                                           (loop (cdr conditions)
+                                                 (cdr results)
+                                                 (helper (car results)
+                                                         senv
+                                                         (helper (car conditions)
+                                                                 senv
+                                                                 free-variables)))))]
+      [var-exp (var) (if (or (memv var free-variables)
+                             (has-binding? senv var))
+                         free-variables
+                         (cons var free-variables))]
+      [let-exp (var exp1 body) (helper body
+                                       (extend-senv (list var) senv)
+                                       (helper exp1
+                                               senv
+                                               free-variables))]
+      [pack-exp (items) (let loop ([items items]
+                                   [free-variables free-variables])
+                          (if (null? items)
+                              free-variables
+                              (loop (cdr items)
+                                    (helper (car items)
+                                            senv
+                                            free-variables))))]
+      [unpack-exp (vars exp body) (helper body
+                                          (extend-senv vars senv)
+                                          free-variables)]
+      [letrec-exp (p-name b-var p-body letrec-body) (let ([rec-senv (extend-senv (list p-name) senv)])
+                                                      (helper letrec-body
+                                                              rec-senv
+                                                              (helper p-body
+                                                                      (extend-senv (list b-var) rec-senv)
+                                                                      free-variables)))]
+      [proc-exp (vars body) (helper body
+                                    (extend-senv vars senv)
+                                    free-variables)]
+      [call-exp (rator rands) (let loop ([rands rands]
+                                         [free-variables (helper rator
+                                                                 senv
+                                                                 free-variables)])
+                                (if (null? rands)
+                                    free-variables
+                                    (loop (cdr rands)
+                                          (helper (car rands)
+                                                  senv
+                                                  free-variables))))]
+      [else (report-invalid-source-expression exp)])))
+
+(define (get-addresses senv variables)
+  (let loop ([depths '()]
+             [positions '()]
+             [variables variables])
+    (if (null? variables)
+        (cons (reverse depths)
+              (reverse positions))
+        (cases lexical-address (apply-senv senv (car variables))
+          [normal-lex-addr (depth position) (loop (cons depth depths)
+                                                  (cons position positions)
+                                                  (cdr variables))]
+          [letrec-lex-addr (depth position) (loop (cons depth depths)
+                                                  (cons position positions)
+                                                  (cdr variables))]))))
 
 (define report-invalid-source-expression
   (lambda (exp)
@@ -114,7 +209,14 @@
                                                                                            (extend-senv (list b-var)
                                                                                                         rec-env))
                                                                            (translation-of letrec-body rec-env)))]
-      [proc-exp (vars body) (nameless-proc-exp (translation-of body (extend-senv vars senv)))]
+      [proc-exp (vars body) (let* ([captured-variables (get-free-variables exp (empty-senv))]
+                                   [addresses (get-addresses senv captured-variables)]
+                                   [depths (car addresses)]
+                                   [positions (cdr addresses)]
+                                   [new-body-env (extend-senv vars (extend-senv captured-variables (empty-senv)))])
+                              (nameless-proc-exp depths
+                                                 positions
+                                                 (translation-of body new-body-env)))]
       [call-exp (rator rands) (call-exp (translation-of rator senv)
                                         (map (lambda (rand)
                                                (translation-of rand senv))
@@ -193,6 +295,19 @@
       (procedure (body saved-env)
                  (value-of body (extend-nameless-env args saved-env))))))
 
+(define (get-values nameless-env depths positions)
+  (let loop ([depths depths]
+             [positions positions]
+             [values '()])
+    (if (null? depths)
+        (reverse values)
+        (loop (cdr depths)
+              (cdr positions)
+              (cons (apply-nameless-env nameless-env
+                                        (car depths)
+                                        (car positions))
+                    values)))))
+
 (define value-of
   (lambda (exp nameless-env)
     (cases expression exp
@@ -235,7 +350,11 @@
       [nameless-letrec-exp (p-body letrec-body) (let ([partial-proc (proc-val (procedure p-body (empty-nameless-env)))])
                                                   (value-of letrec-body
                                                             (extend-nameless-env (list partial-proc) nameless-env)))]
-      [nameless-proc-exp (body) (proc-val (procedure body nameless-env))]
+      [nameless-proc-exp (depths positions body) (proc-val (procedure body
+                                                                      (extend-nameless-env (get-values nameless-env
+                                                                                                       depths
+                                                                                                       positions)
+                                                                                           (empty-nameless-env))))]
       [else (eopl:error 'value-of "Illegal expression in translated code: ~s" exp)])))
 
 ;; Interfaces.
