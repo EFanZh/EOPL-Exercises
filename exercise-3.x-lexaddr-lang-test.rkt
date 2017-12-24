@@ -27,3 +27,8 @@
                           in let g = proc (z) -(z, x)
                              in -((f 1), (g 1))")
               (num-val -100))
+
+(check-equal? (run "let x = 4
+                        y = 7
+                    in -(y, x)")
+              (num-val 3))
