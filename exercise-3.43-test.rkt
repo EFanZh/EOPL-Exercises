@@ -3,6 +3,12 @@
 (require rackunit)
 (require "exercise-3.x-lexaddr-lang.rkt")
 
+(check-equal? (run "let x = 3
+                    in let f = proc (y)
+                                 -(y, x)
+                       in (f 13)")
+              (num-val 10))
+
 (check-equal? (run "let x = 5
                     in let f = proc ()
                                  x
