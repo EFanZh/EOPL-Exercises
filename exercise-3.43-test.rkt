@@ -29,3 +29,9 @@
                        in let y = 10
                           in (f y)")
               (num-val 3))
+
+(check-equal? (run "let f = 7
+                    in let f = proc ()
+                                 f
+                       in (f)")
+              (num-val 7))
