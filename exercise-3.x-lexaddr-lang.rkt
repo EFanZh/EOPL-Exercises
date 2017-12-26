@@ -22,13 +22,14 @@
     [expression ("let" (arbno identifier "=" expression) "in" expression) let-exp]
     [expression ("pack" "(" (separated-list expression ",") ")") pack-exp]
     [expression ("unpack" (arbno identifier) "=" expression "in" expression) unpack-exp]
-    [expression ("letrec" identifier "(" identifier ")" "=" expression "in" expression) letrec-exp]
+    [expression ("letrec" (arbno identifier "(" (separated-list identifier ",") ")" "=" expression) "in" expression)
+                letrec-exp]
     [expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp]
     [expression ("(" expression (arbno expression) ")") call-exp]
     [expression ("%nameless-var" number number) nameless-var-exp]
     [expression ("%let" (arbno expression) "in" expression) nameless-let-exp]
     [expression ("%unpack" expression "in" expression) nameless-unpack-exp]
-    [expression ("%letrec" expression "in" expression) nameless-letrec-exp]
+    [expression ("%letrec" (arbno expression) "in" expression) nameless-letrec-exp]
     [expression ("%nameless-letrec-var" number number) nameless-letrec-var-exp]
     [expression ("%lexproc" "[" (arbno number number) "]" expression) nameless-proc-exp]))
 
@@ -52,6 +53,13 @@
                [saved-senv static-environment?]]
   [extend-senv-rec [vars (list-of symbol?)]
                    [saved-senv static-environment?]])
+
+(define (extend-senv* vars saved-env)
+  (extend-senv vars
+               (map (lambda (var)
+                      #f)
+                    vars)
+               saved-env))
 
 (define report-unbound-var
   (lambda (var)
@@ -169,24 +177,24 @@
                                             senv
                                             free-variables))))]
       [unpack-exp (vars exp body) (helper body
-                                          (extend-senv vars
-                                                       (map (lambda (var)
-                                                              #f)
-                                                            vars)
-                                                       senv)
+                                          (extend-senv* vars senv)
                                           free-variables)]
-      [letrec-exp (p-name b-var p-body letrec-body) (let ([rec-senv (extend-senv (list p-name) '(#f) senv)])
-                                                      (helper letrec-body
-                                                              rec-senv
-                                                              (helper p-body
-                                                                      (extend-senv (list b-var) '(#f) rec-senv)
-                                                                      free-variables)))]
+      [letrec-exp (p-names b-vars p-bodies letrec-body) (let ([rec-senv (extend-senv* p-names senv)])
+                                                          (helper letrec-body
+                                                                  rec-senv
+                                                                  (let loop ([b-vars b-vars]
+                                                                             [p-bodies p-bodies]
+                                                                             [free-variables free-variables])
+                                                                    (if (null? b-vars)
+                                                                        free-variables
+                                                                        (loop (cdr b-vars)
+                                                                              (cdr p-bodies)
+                                                                              (helper (car p-bodies)
+                                                                                      (extend-senv* (car b-vars)
+                                                                                                    rec-senv)
+                                                                                      free-variables))))))]
       [proc-exp (vars body) (helper body
-                                    (extend-senv vars
-                                                 (map (lambda (var)
-                                                        #f)
-                                                      vars)
-                                                 senv)
+                                    (extend-senv* vars senv)
                                     free-variables)]
       [call-exp (rator rands) (let loop ([rands rands]
                                          [free-variables (helper rator
@@ -258,26 +266,19 @@
     [unpack-exp (vars exp body) (unpack-exp vars
                                             (inline-proc exp senv)
                                             (inline-proc body
-                                                         (extend-senv vars
-                                                                      (map (lambda (var)
-                                                                             #f)
-                                                                           vars)
-                                                                      senv)))]
-    [letrec-exp (p-name b-var p-body letrec-body) (let ([rec-env (extend-senv-rec (list p-name) senv)])
-                                                    (letrec-exp p-name
-                                                                b-var
-                                                                (inline-proc p-body
-                                                                             (extend-senv (list b-var)
-                                                                                          '(#f)
-                                                                                          rec-env))
-                                                                (inline-proc letrec-body rec-env)))]
+                                                         (extend-senv* vars senv)))]
+    [letrec-exp (p-names b-vars p-bodies letrec-body) (let ([rec-env (extend-senv-rec p-names senv)])
+                                                        (letrec-exp p-names
+                                                                    b-vars
+                                                                    (map (lambda (b-vars p-body)
+                                                                           (inline-proc p-body
+                                                                                        (extend-senv* b-vars rec-env)))
+                                                                         b-vars
+                                                                         p-bodies)
+                                                                    (inline-proc letrec-body rec-env)))]
     [proc-exp (vars body) (proc-exp vars
                                     (inline-proc body
-                                                 (extend-senv vars
-                                                              (map (lambda (var)
-                                                                     #f)
-                                                                   vars)
-                                                              senv)))]
+                                                 (extend-senv* vars senv)))]
     [call-exp (rator rands)
               (let* ([fallback (lambda ()
                                  (call-exp (inline-proc rator senv)
@@ -362,30 +363,24 @@
                                        (remove-unused-proc exp senv))
                                      items))]
     [unpack-exp (vars exp body) (nameless-unpack-exp (remove-unused-proc exp senv)
-                                                     (remove-unused-proc body (extend-senv vars
-                                                                                           (map (lambda (var)
-                                                                                                  #f)
-                                                                                                vars)
-                                                                                           senv)))]
-    [letrec-exp (p-name b-var p-body letrec-body) (let ([rec-env (extend-senv-rec (list p-name) senv)])
-                                                    (nameless-letrec-exp (remove-unused-proc p-body
-                                                                                             (extend-senv (list b-var)
-                                                                                                          '(#f)
-                                                                                                          rec-env))
-                                                                         (remove-unused-proc letrec-body rec-env)))]
+                                                     (remove-unused-proc body (extend-senv* vars senv)))]
+    [letrec-exp (p-names b-vars p-bodies letrec-body) (let* ([rec-env (extend-senv-rec p-names senv)]
+                                                             [new-p-bodies (map (lambda (b-vars p-body)
+                                                                                  (remove-unused-proc
+                                                                                   p-body
+                                                                                   (extend-senv* b-vars rec-env)))
+                                                                                b-vars
+                                                                                p-bodies)]
+                                                             [new-letrec-body (remove-unused-proc letrec-body rec-env)])
+                                                        (nameless-letrec-exp new-p-bodies
+                                                                             new-letrec-body))]
     [proc-exp (vars body) (let* ([captured-variables (get-free-variables exp (empty-senv))]
                                  [addresses (get-addresses senv captured-variables)]
                                  [depths (car addresses)]
                                  [positions (cdr addresses)]
-                                 [new-body-env (extend-senv vars
-                                                            (map (lambda (var)
-                                                                   #f)
-                                                                 vars)
-                                                            (extend-senv captured-variables
-                                                                         (map (lambda (var)
-                                                                                #f)
-                                                                              captured-variables)
-                                                                         (empty-senv)))])
+                                 [new-body-env (extend-senv* vars
+                                                             (extend-senv* captured-variables
+                                                                           (empty-senv)))])
                             (nameless-proc-exp depths
                                                positions
                                                (remove-unused-proc body new-body-env)))]
@@ -524,9 +519,12 @@
                                       exps))]
       [nameless-unpack-exp (exp body) (let ([vals (expval->pack (value-of exp nameless-env))])
                                         (value-of body (extend-nameless-env vals nameless-env)))]
-      [nameless-letrec-exp (p-body letrec-body) (let ([partial-proc (proc-val (procedure p-body (empty-nameless-env)))])
-                                                  (value-of letrec-body
-                                                            (extend-nameless-env (list partial-proc) nameless-env)))]
+      [nameless-letrec-exp (p-bodies letrec-body) (let* ([make-proc (lambda (p-body)
+                                                                      (proc-val (procedure p-body
+                                                                                           (empty-nameless-env))))]
+                                                         [partial-procs (map make-proc p-bodies)])
+                                                    (value-of letrec-body
+                                                              (extend-nameless-env partial-procs nameless-env)))]
       [nameless-proc-exp (depths positions body) (proc-val (procedure body
                                                                       (extend-nameless-env (get-values nameless-env
                                                                                                        depths
