@@ -4,10 +4,10 @@
 (require "exercise-3.x-let-lang.rkt")
 
 (check-equal? (run "let x = 4
-in cons(x,
-        cons(cons(-(x,1),
-                  emptylist),
-             emptylist))")
+                    in cons(x,
+                            cons(cons(-(x, 1),
+                                      emptylist),
+                                 emptylist))")
               (pair-val (num-val 4)
                         (pair-val (pair-val (num-val 3)
                                             (emptylist-val))
