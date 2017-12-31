@@ -17,9 +17,10 @@
     [expression ("if" expression "then" expression "else" expression) if-exp]
     [expression (identifier) var-exp]
     [expression ("let" identifier "=" expression "in" expression) let-exp]
-    [expression ("proc" "(" identifier ")" expression) proc-exp]
-    [expression ("(" expression expression ")") call-exp]
-    [expression ("letrec" (arbno identifier "(" identifier ")" "=" expression) "in" expression) letrec-exp]
+    [expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp]
+    [expression ("(" expression (arbno expression) ")") call-exp]
+    [expression ("letrec" (arbno identifier "(" (separated-list identifier ",") ")" "=" expression) "in" expression)
+                letrec-exp]
     [expression ("begin" expression (arbno ";" expression) "end") begin-exp]
     [expression ("emptylist") emptylist-exp]
     [expression ("null?" "(" expression ")") null?-exp]
@@ -39,7 +40,7 @@
 ;; Data structures.
 
 (define-datatype proc proc?
-  [procedure [bvar symbol?]
+  [procedure [bvars (list-of symbol?)]
              [body expression?]
              [env environment?]])
 
@@ -91,7 +92,7 @@
               [bval expval?]
               [saved-env environment?]]
   [extend-env-rec* [proc-names (list-of symbol?)]
-                   [b-vars (list-of symbol?)]
+                   [b-vars (list-of (list-of symbol?))]
                    [proc-bodies (list-of expression?)]
                    [saved-env environment?]])
 
@@ -158,11 +159,21 @@
   [an-answer [val expval?]
              [store store?]])
 
-(define (apply-procedure proc1 arg store)
+(define (apply-procedure proc1 args store)
   (cases proc proc1
-    [procedure (bvar body saved-env) (value-of body
-                                               (extend-env bvar arg saved-env)
-                                               store)]))
+    [procedure (bvars body saved-env) (let ([body-env (let loop ([bvars bvars]
+                                                                 [args args]
+                                                                 [env saved-env])
+                                                        (if (null? bvars)
+                                                            env
+                                                            (loop (cdr bvars)
+                                                                  (cdr args)
+                                                                  (extend-env (car bvars)
+                                                                              (car args)
+                                                                              env))))])
+                                        (value-of body
+                                                  body-env
+                                                  store))]))
 
 (define value-of
   (lambda (exp env store)
@@ -188,12 +199,19 @@
                                                                    store1)])]
       [let-exp (var exp1 body) (cases answer (value-of exp1 env store)
                                  [an-answer (val1 store1) (value-of body (extend-env var val1 env) store1)])]
-      [proc-exp (var body) (an-answer (proc-val (procedure var body env)) store)]
-      [call-exp (rator rand) (cases answer (value-of rator env store)
-                               [an-answer (proc store1) (cases answer (value-of rand env store1)
-                                                          [an-answer (arg store2) (apply-procedure (expval->proc proc)
-                                                                                                   arg
-                                                                                                   store2)])])]
+      [proc-exp (vars body) (an-answer (proc-val (procedure vars body env)) store)]
+      [call-exp (rator rands) (cases answer (value-of rator env store)
+                                [an-answer (proc store1) (let loop ([rands rands]
+                                                                    [args '()]
+                                                                    [store1 store1])
+                                                           (if (null? rands)
+                                                               (apply-procedure (expval->proc proc)
+                                                                                (reverse args)
+                                                                                store1)
+                                                               (cases answer (value-of (car rands) env store1)
+                                                                 [an-answer (arg store2) (loop (cdr rands)
+                                                                                               (cons arg args)
+                                                                                               store2)])))])]
       [letrec-exp (p-names b-vars p-bodies letrec-body) (value-of letrec-body
                                                                   (extend-env-rec* p-names
                                                                                    b-vars
