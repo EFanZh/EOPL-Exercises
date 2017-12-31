@@ -21,6 +21,12 @@
     [expression ("(" expression expression ")") call-exp]
     [expression ("letrec" (arbno identifier "(" identifier ")" "=" expression) "in" expression) letrec-exp]
     [expression ("begin" expression (arbno ";" expression) "end") begin-exp]
+    [expression ("emptylist") emptylist-exp]
+    [expression ("null?" "(" expression ")") null?-exp]
+    [expression ("cons" "(" expression "," expression ")") cons-exp]
+    [expression ("car" "(" expression ")") car-exp]
+    [expression ("cdr" "(" expression ")") cdr-exp]
+    [expression ("list" "(" (separated-list expression ",") ")") list-exp]
     [expression ("newref" "(" expression ")") newref-exp]
     [expression ("deref" "(" expression ")") deref-exp]
     [expression ("setref" "(" expression "," expression ")") setref-exp]))
@@ -40,6 +46,9 @@
 (define-datatype expval expval?
   [num-val [value number?]]
   [bool-val [boolean boolean?]]
+  [emptylist-val]
+  [pair-val [car expval?]
+            [cdr expval?]]
   [proc-val [proc proc?]]
   [ref-val [ref reference?]])
 
@@ -192,6 +201,26 @@
                                                                v1
                                                                (value-of-begins (car es) (cdr es)))))])
                                (value-of-begins exp1 exps))]
+      [emptylist-exp () (emptylist-val)]
+      [null?-exp (exp) (cases expval (value-of exp env)
+                         [emptylist-val () (bool-val #t)]
+                         [else (bool-val #f)])]
+      [cons-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
+                                  [val2 (value-of exp2 env)])
+                              (pair-val val1 val2))]
+      [car-exp (exp) (let ([val (value-of exp env)])
+                       (cases expval val
+                         [pair-val (car cdr) car]
+                         [else (eopl:error 'value-of "Expect a pair, but got ~s." val)]))]
+      [cdr-exp (exp) (let ([val (value-of exp env)])
+                       (cases expval val
+                         [pair-val (car cdr) cdr]
+                         [else (eopl:error 'value-of "Expect a pair, but got ~s." val)]))]
+      [list-exp (exps) (let loop ([exps exps])
+                         (if (null? exps)
+                             (emptylist-val)
+                             (pair-val (value-of (car exps) env)
+                                       (loop (cdr exps)))))]
       [newref-exp (exp1) (let ([v1 (value-of exp1 env)])
                            [ref-val (newref v1)])]
       (deref-exp (exp1) (let ([v1 (value-of exp1 env)])
@@ -214,4 +243,4 @@
   (lambda (string)
     (value-of-program (scan&parse string))))
 
-(provide num-val bool-val run)
+(provide num-val bool-val emptylist-val pair-val run)
