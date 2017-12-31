@@ -67,3 +67,16 @@
                              deref(deref(x))
                        end")
               (num-val 11))
+
+(check-equal? (run "deref(newref(7))")
+              (num-val 7))
+
+(check-equal? (run "let x = newref(2)
+                    in begin setref(let ref = newref(3)
+                                    in begin setref(x, ref);
+                                             ref
+                                       end,
+                                    5);
+                             deref(deref(x))
+                       end")
+              (num-val 5))

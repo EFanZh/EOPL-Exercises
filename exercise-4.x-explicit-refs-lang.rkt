@@ -112,9 +112,9 @@
                                             (apply-env saved-env search-sym))]
       [extend-env-rec* (p-names b-vars p-bodies saved-env)
                        (cond [(location search-sym p-names) => (lambda (n)
-                                                                 (proc-val (procedure  (list-ref b-vars n)
-                                                                                       (list-ref p-bodies n)
-                                                                                       env)))]
+                                                                 (proc-val (procedure (list-ref b-vars n)
+                                                                                      (list-ref p-bodies n)
+                                                                                      env)))]
                              [else (apply-env saved-env search-sym)])])))
 
 ;; Store.
@@ -123,26 +123,19 @@
   (lambda (v)
     (integer? v)))
 
-(define the-store 'uninitialized)
+(define store? (list-of expval?))
 
 (define empty-store
   (lambda ()
     '()))
 
-(define initialize-store!
-  (lambda ()
-    (set! the-store (empty-store))))
+(define (newref store val)
+  (let ([next-ref (length store)]
+        [new-store (append store (list val))])
+    (cons next-ref new-store)))
 
-(define newref
-  (lambda (val)
-    (let ([next-ref (length the-store)])
-      (set! the-store (append the-store (list val)))
-      next-ref)))
-
-(define deref
-  (lambda (ref)
-    (list-ref the-store ref)))
-
+(define (deref store ref)
+  (list-ref store ref))
 
 (define report-invalid-reference
   (lambda (ref the-store)
@@ -151,96 +144,123 @@
                 ref
                 the-store)))
 
-(define setref!
-  (lambda (ref val)
-    (set! the-store
-          (letrec ([setref-inner (lambda (store1 ref1)
-                                   (cond [(null? store1) (report-invalid-reference ref the-store)]
-                                         [(zero? ref1) (cons val (cdr store1))]
-                                         [else (cons (car store1)
-                                                     (setref-inner (cdr store1) (- ref1 1)))]))])
-            (setref-inner the-store ref)))))
+(define (setref! store ref val)
+  (let loop ([store1 store]
+             [ref1 ref])
+    (cond [(null? store1) (report-invalid-reference ref store)]
+          [(zero? ref1) (cons val (cdr store1))]
+          [else (cons (car store1)
+                      (loop (cdr store1) (- ref1 1)))])))
 
 ;; Interpreter.
 
-(define apply-procedure
-  (lambda (proc1 arg)
-    (cases proc proc1
-      [procedure (bvar body saved-env) (value-of body (extend-env bvar arg saved-env))])))
+(define-datatype answer answer?
+  [an-answer [val expval?]
+             [store store?]])
+
+(define (apply-procedure proc1 arg store)
+  (cases proc proc1
+    [procedure (bvar body saved-env) (value-of body
+                                               (extend-env bvar arg saved-env)
+                                               store)]))
 
 (define value-of
-  (lambda (exp env)
+  (lambda (exp env store)
     (cases expression exp
-      [const-exp (num) (num-val num)]
-      [var-exp (var) (apply-env env var)]
-      [diff-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
-                                  [val2 (value-of exp2 env)])
-                              (let ([num1 (expval->num val1)]
-                                    [num2 (expval->num val2)])
-                                (num-val (- num1 num2))))]
-      [zero?-exp (exp1) (let ([val1 (value-of exp1 env)])
-                          (let ([num1 (expval->num val1)])
-                            (if (zero? num1)
-                                (bool-val #t)
-                                (bool-val #f))))]
-      [if-exp (exp1 exp2 exp3) (let ([val1 (value-of exp1 env)])
-                                 (if (expval->bool val1)
-                                     (value-of exp2 env)
-                                     (value-of exp3 env)))]
-      [let-exp (var exp1 body) (let ([val1 (value-of exp1 env)])
-                                 (value-of body (extend-env var val1 env)))]
-      [proc-exp (var body) (proc-val (procedure var body env))]
-      [call-exp (rator rand) (let ([proc (expval->proc (value-of rator env))]
-                                   [arg (value-of rand env)])
-                               (apply-procedure proc arg))]
+      [const-exp (num) (an-answer (num-val num) store)]
+      [var-exp (var) (an-answer (apply-env env var) store)]
+      [diff-exp (exp1 exp2) (cases answer (value-of exp1 env store)
+                              [an-answer (val1 store1) (cases answer (value-of exp2 env store1)
+                                                         [an-answer (val2 store2) (let ([num1 (expval->num val1)]
+                                                                                        [num2 (expval->num val2)])
+                                                                                    (an-answer (num-val (- num1 num2))
+                                                                                               store2))])])]
+      [zero?-exp (exp) (cases answer (value-of exp env store)
+                         [an-answer (val1 store1) (let ([num1 (expval->num val1)])
+                                                    (if (zero? num1)
+                                                        (an-answer (bool-val #t) store1)
+                                                        (an-answer (bool-val #f) store1)))])]
+      [if-exp (exp1 exp2 exp3) (cases answer (value-of exp1 env store)
+                                 [an-answer (val store1) (value-of (if (expval->bool val)
+                                                                       exp2
+                                                                       exp3)
+                                                                   env
+                                                                   store1)])]
+      [let-exp (var exp1 body) (cases answer (value-of exp1 env store)
+                                 [an-answer (val1 store1) (value-of body (extend-env var val1 env) store1)])]
+      [proc-exp (var body) (an-answer (proc-val (procedure var body env)) store)]
+      [call-exp (rator rand) (cases answer (value-of rator env store)
+                               [an-answer (proc store1) (cases answer (value-of rand env store1)
+                                                          [an-answer (arg store2) (apply-procedure (expval->proc proc)
+                                                                                                   arg
+                                                                                                   store2)])])]
       [letrec-exp (p-names b-vars p-bodies letrec-body) (value-of letrec-body
-                                                                  (extend-env-rec* p-names b-vars p-bodies env))]
-      [begin-exp (exp1 exps) (letrec ([value-of-begins (lambda (e1 es)
-                                                         (let ([v1 (value-of e1 env)])
-                                                           (if (null? es)
-                                                               v1
-                                                               (value-of-begins (car es) (cdr es)))))])
-                               (value-of-begins exp1 exps))]
-      [emptylist-exp () (emptylist-val)]
-      [null?-exp (exp) (cases expval (value-of exp env)
-                         [emptylist-val () (bool-val #t)]
-                         [else (bool-val #f)])]
-      [cons-exp (exp1 exp2) (let ([val1 (value-of exp1 env)]
-                                  [val2 (value-of exp2 env)])
-                              (pair-val val1 val2))]
-      [car-exp (exp) (let ([val (value-of exp env)])
-                       (cases expval val
-                         [pair-val (car cdr) car]
-                         [else (eopl:error 'value-of "Expect a pair, but got ~s." val)]))]
-      [cdr-exp (exp) (let ([val (value-of exp env)])
-                       (cases expval val
-                         [pair-val (car cdr) cdr]
-                         [else (eopl:error 'value-of "Expect a pair, but got ~s." val)]))]
-      [list-exp (exps) (let loop ([exps exps])
+                                                                  (extend-env-rec* p-names
+                                                                                   b-vars
+                                                                                   p-bodies
+                                                                                   env)
+                                                                  store)]
+      [begin-exp (exp1 exps) (let loop ([e1 exp1]
+                                        [es exps]
+                                        [store store])
+                               (let ([current-answer (value-of e1 env store)])
+                                 (if (null? es)
+                                     current-answer
+                                     (cases answer current-answer
+                                       [an-answer (val store1)
+                                                  (loop (car es) (cdr es) store1)]))))]
+      [emptylist-exp () (an-answer (emptylist-val) store)]
+      [null?-exp (exp) (cases answer (value-of exp env store)
+                         [an-answer (val store1) (cases expval val
+                                                   [emptylist-val () (an-answer (bool-val #t) store1)]
+                                                   [else (an-answer (bool-val #f) store1)])])]
+      [cons-exp (exp1 exp2) (cases answer (value-of exp1 env store)
+                              [an-answer (val1 store1) (cases answer (value-of exp2 env store1)
+                                                         [an-answer (val2 store2) (an-answer (pair-val val1 val2)
+                                                                                             store2)])])]
+      [car-exp (exp) (cases answer (value-of exp env store)
+                       [an-answer (val store1) (cases expval val
+                                                 [pair-val (car cdr) (an-answer car store1)]
+                                                 [else (eopl:error 'value-of "Expect a pair, but got ~s." val)])])]
+      [cdr-exp (exp) (cases answer (value-of exp env store)
+                       [an-answer (val store1) (cases expval val
+                                                 [pair-val (car cdr) (an-answer cdr store1)]
+                                                 [else (eopl:error 'value-of "Expect a pair, but got ~s." val)])])]
+      [list-exp (exps) (let loop ([exps exps]
+                                  [store store])
                          (if (null? exps)
-                             (emptylist-val)
-                             (pair-val (value-of (car exps) env)
-                                       (loop (cdr exps)))))]
-      [newref-exp (exp1) (let ([v1 (value-of exp1 env)])
-                           [ref-val (newref v1)])]
-      (deref-exp (exp1) (let ([v1 (value-of exp1 env)])
-                          (let ([ref1 (expval->ref v1)])
-                            (deref ref1))))
-      [setref-exp (exp1 exp2) (let ([ref (expval->ref (value-of exp1 env))])
-                                (let ([v2 (value-of exp2 env)])
-                                  (begin (setref! ref v2)
-                                         (num-val 23))))])))
+                             (an-answer (emptylist-val) store)
+                             (cases answer (value-of (car exps) env store)
+                               [an-answer (val1 store1) (cases answer (loop (cdr exps) store1)
+                                                          [an-answer (val2 store2) (an-answer (pair-val val1 val2)
+                                                                                              store2)])])))]
+      [newref-exp (exp) (cases answer (value-of exp env store)
+                          [an-answer (val store1) (let* ([ref-and-store (newref store1 val)]
+                                                         [ref (car ref-and-store)]
+                                                         [store1 (cdr ref-and-store)])
+                                                    (an-answer (ref-val ref) store1))])]
+      [deref-exp (exp) (cases answer (value-of exp env store)
+                         [an-answer (val store1) (let ([ref (expval->ref val)])
+                                                   (an-answer (deref store1 ref) store1))])]
+      [setref-exp (exp1 exp2) (cases answer (value-of exp1 env store)
+                                [an-answer (val1 store1) (cases answer (value-of exp2 env store1)
+                                                           [an-answer (val2 store2) (let* ([ref (expval->ref val1)]
+                                                                                           [store2 (setref! store2
+                                                                                                            ref
+                                                                                                            val2)])
+                                                                                      (an-answer (num-val 23)
+                                                                                                 store2))])])])))
 
 ;; Interface.
 
 (define value-of-program
   (lambda (pgm)
-    (initialize-store!)
     (cases program pgm
-      [a-program (exp1) (value-of exp1 (empty-env))])))
+      [a-program (exp1) (value-of exp1 (empty-env) (empty-store))])))
 
 (define run
   (lambda (string)
-    (value-of-program (scan&parse string))))
+    (cases answer (value-of-program (scan&parse string))
+      [an-answer (val store) val])))
 
 (provide num-val bool-val emptylist-val pair-val run)
