@@ -269,12 +269,12 @@
                                                                                       (an-answer (num-val 23)
                                                                                                  store2))])])])))
 
-;; Interface.
-
 (define value-of-program
   (lambda (pgm)
     (cases program pgm
       [a-program (exp1) (value-of exp1 (empty-env) (empty-store))])))
+
+;; Interface.
 
 (define run
   (lambda (string)
