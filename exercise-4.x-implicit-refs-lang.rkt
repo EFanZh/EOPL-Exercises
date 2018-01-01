@@ -16,10 +16,11 @@
     [expression ("zero?" "(" expression ")") zero?-exp]
     [expression ("if" expression "then" expression "else" expression) if-exp]
     [expression (identifier) var-exp]
-    [expression ("let" identifier "=" expression "in" expression) let-exp]
-    [expression ("proc" "(" identifier ")" expression) proc-exp]
-    [expression ("(" expression expression ")") call-exp]
-    [expression ("letrec" (arbno identifier "(" identifier ")" "=" expression) "in" expression) letrec-exp]
+    [expression ("let" (arbno identifier "=" expression) "in" expression) let-exp]
+    [expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp]
+    [expression ("(" expression (arbno expression) ")") call-exp]
+    [expression ("letrec" (arbno identifier "(" (separated-list identifier ",") ")" "=" expression) "in" expression)
+                letrec-exp]
     [expression ("begin" expression (arbno ";" expression) "end") begin-exp]
     [expression ("set" identifier "=" expression) assign-exp]))
 
@@ -31,7 +32,7 @@
 ;; Data structures.
 
 (define-datatype proc proc?
-  [procedure [bvar symbol?]
+  [procedure [bvars (list-of symbol?)]
              [body expression?]
              [env environment?]])
 
@@ -82,17 +83,13 @@
   [empty-env]
   [extend-env [bvar symbol?]
               [bval reference?]
-              [saved-env environment?]]
-  [extend-env-rec* [proc-names (list-of symbol?)]
-                   [b-vars (list-of symbol?)]
-                   [proc-bodies (list-of expression?)]
-                   [saved-env environment?]])
+              [saved-env environment?]])
 
 (define location
   (lambda (sym syms)
     (cond [(null? syms) #f]
           [(eqv? sym (car syms)) 0]
-          [(location sym (cdr syms)) => (lambda (n) 
+          [(location sym (cdr syms)) => (lambda (n)
                                           (+ n 1))]
           [else #f])))
 
@@ -102,13 +99,7 @@
       [empty-env () (eopl:error 'apply-env "No binding for ~s" search-var)]
       [extend-env (bvar bval saved-env) (if (eqv? search-var bvar)
                                             bval
-                                            (apply-env saved-env search-var))]
-      [extend-env-rec* (p-names b-vars p-bodies saved-env) (let ([n (location search-var p-names)])
-                                                             (if n
-                                                                 (newref (proc-val (procedure  (list-ref b-vars n)
-                                                                                               (list-ref p-bodies n)
-                                                                                               env)))
-                                                                 (apply-env saved-env search-var)))])))
+                                            (apply-env saved-env search-var))])))
 
 ;; Store.
 
@@ -128,7 +119,7 @@
       (set! the-store (append the-store (list val)))
       next-ref)))
 
-(define deref 
+(define deref
   (lambda (ref)
     (list-ref the-store ref)))
 
@@ -139,7 +130,7 @@
                 ref
                 the-store)))
 
-(define setref!                       
+(define setref!
   (lambda (ref val)
     (set! the-store
           (letrec ([setref-inner (lambda (store1 ref1)
@@ -151,11 +142,19 @@
 ;; Interpreter.
 
 (define apply-procedure
-  (lambda (proc1 arg)
+  (lambda (proc1 args)
     (cases proc proc1
-      [procedure (var body saved-env) (let ([r (newref arg)])
-                                        (let ([new-env (extend-env var r saved-env)])
-                                          (value-of body new-env)))])))
+      [procedure (vars body saved-env) (let ([new-env (let loop ([vars vars]
+                                                                 [args args]
+                                                                 [env saved-env])
+                                                        (if (null? vars)
+                                                            env
+                                                            (loop (cdr vars)
+                                                                  (cdr args)
+                                                                  (extend-env (car vars)
+                                                                              (newref (car args))
+                                                                              env))))])
+                                         (value-of body new-env))])))
 
 (define value-of
   (lambda (exp env)
@@ -176,15 +175,45 @@
                                  (if (expval->bool val1)
                                      (value-of exp2 env)
                                      (value-of exp3 env)))]
-      [let-exp (var exp1 body) (let ([v1 (value-of exp1 env)])
-                                 (value-of body
-                                           (extend-env var (newref v1) env)))]        
-      [proc-exp (var body) (proc-val (procedure var body env))]
-      [call-exp (rator rand) (let ([proc (expval->proc (value-of rator env))]
-                                   [arg (value-of rand env)])
-                               (apply-procedure proc arg))]
-      [letrec-exp (p-names b-vars p-bodies letrec-body) (value-of letrec-body
-                                                                  (extend-env-rec* p-names b-vars p-bodies env))]
+      [let-exp (vars exps body) (let ([body-env (let loop ([vars vars]
+                                                           [exps exps]
+                                                           [env1 env])
+                                                  (if (null? vars)
+                                                      env1
+                                                      (loop (cdr vars)
+                                                            (cdr exps)
+                                                            (extend-env (car vars)
+                                                                        (newref (value-of (car exps) env))
+                                                                        env1))))])
+                                  (value-of body body-env))]
+      [proc-exp (vars body) (proc-val (procedure vars body env))]
+      [call-exp (rator rands) (let ([proc (expval->proc (value-of rator env))]
+                                    [args (map (lambda (rand)
+                                                 (value-of rand env))
+                                               rands)])
+                                (apply-procedure proc args))]
+      [letrec-exp (p-names b-vars p-bodies letrec-body) (let* ([refs (map (lambda (p-name)
+                                                                            (newref 0))
+                                                                          p-names)]
+                                                               [rec-env (let loop ([p-names p-names]
+                                                                                   [refs refs]
+                                                                                   [env env])
+                                                                          (if (null? p-names)
+                                                                              env
+                                                                              (loop (cdr p-names)
+                                                                                    (cdr refs)
+                                                                                    (extend-env (car p-names)
+                                                                                                (car refs)
+                                                                                                env))))])
+                                                          (for-each (lambda (ref b-vars p-body)
+                                                                      (setref! ref
+                                                                               (proc-val (procedure b-vars
+                                                                                                    p-body
+                                                                                                    rec-env))))
+                                                                    refs
+                                                                    b-vars
+                                                                    p-bodies)
+                                                          (value-of letrec-body rec-env))]
       [begin-exp (exp1 exps) (letrec ([value-of-begins (lambda (e1 es)
                                                          (let ([v1 (value-of e1 env)])
                                                            (if (null? es)
@@ -195,7 +224,7 @@
                                              (value-of exp1 env))
                                     (num-val 27))])))
 
-(define value-of-program 
+(define value-of-program
   (lambda (pgm)
     (initialize-store!)
     (cases program pgm
