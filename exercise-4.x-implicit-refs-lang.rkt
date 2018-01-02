@@ -39,8 +39,7 @@
 (define-datatype expval expval?
   [num-val [value number?]]
   [bool-val [boolean boolean?]]
-  [proc-val [proc proc?]]
-  [ref-val [ref reference?]])
+  [proc-val [proc proc?]])
 
 (define expval-extractor-error
   (lambda (variant value)
@@ -66,12 +65,6 @@
     (cases expval v
       [proc-val (proc) proc]
       [else (expval-extractor-error 'proc v)])))
-
-(define expval->ref
-  (lambda (v)
-    (cases expval v
-      [ref-val (ref) ref]
-      [else (expval-extractor-error 'reference v)])))
 
 ;; Environments.
 
