@@ -22,7 +22,8 @@
     [expression ("letrec" (arbno identifier "(" (separated-list identifier ",") ")" "=" expression) "in" expression)
                 letrec-exp]
     [expression ("begin" expression (arbno ";" expression) "end") begin-exp]
-    [expression ("set" identifier "=" expression) assign-exp]))
+    [expression ("set" identifier "=" expression) assign-exp]
+    [expression ("setdynamic" identifier "=" expression "during" expression) dynamic-assign-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
@@ -215,7 +216,14 @@
                                (value-of-begins exp1 exps))]
       [assign-exp (var exp1) (begin (setref! (apply-env env var)
                                              (value-of exp1 env))
-                                    (num-val 27))])))
+                                    (num-val 27))]
+      [dynamic-assign-exp (var exp body) (let* ([ref (apply-env env var)]
+                                                [new-val (value-of exp env)]
+                                                [saved-val (deref ref)])
+                                           (setref! ref new-val)
+                                           (let ([result (value-of body env)])
+                                             (setref! ref saved-val)
+                                             result))])))
 
 (define value-of-program
   (lambda (pgm)
