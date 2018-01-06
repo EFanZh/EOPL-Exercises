@@ -14,3 +14,5 @@ before_script:
   - racket -v
 script:
   - raco test tests
+notifications:
+    email: false
