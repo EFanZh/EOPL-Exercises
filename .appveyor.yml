@@ -1,0 +1,5 @@
+install:
+  - cinst racket
+build: off
+test_script:
+  - '"%ProgramFiles%\Racket\raco.exe" test tests'
