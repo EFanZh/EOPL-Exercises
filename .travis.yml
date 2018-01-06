@@ -2,16 +2,16 @@ os:
   - linux
   - osx
 addons:
-    sources:
-      - sourceline: ppa:plt/racket
     apt:
+        sources:
+          - sourceline: ppa:plt/racket
         packages:
           - racket
 before_install:
   - |
     if [ "$TRAVIS_OS_NAME" == osx ]
     then
-        brew install minimal-racket
+        brew cask install racket
     fi
 before_script:
   - racket -v
