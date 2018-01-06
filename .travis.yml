@@ -1,0 +1,11 @@
+addons:
+    apt:
+        packages:
+          - racket
+before_install:
+  - if [ "$TRAVIS_OS_NAME" == osx ]
+    then
+        brew install racket
+    fi
+script:
+  - raco test tests
