@@ -1,0 +1,53 @@
+#lang racket
+
+(require rackunit)
+(require "../solutions/exercise-3.x-proc-lang.rkt")
+
+(define (even? x)
+  (run (format "(let false = zero?(1)
+                 in let true = zero?(0)
+                    in let makeeven = proc (makeeven)
+                                        proc (makeodd)
+                                          proc (x)
+                                            if zero?(x)
+                                            then true
+                                            else (((makeodd makeeven) makeodd) -(x, 1))
+                       in let makeodd = proc (makeeven)
+                                          proc (makeodd)
+                                            proc (x)
+                                              if zero?(x)
+                                              then false
+                                              else (((makeeven makeeven) makeodd) -(x, 1))
+                          in ((makeeven makeeven) makeodd)
+                 ~a)" x)))
+
+(define (odd? x)
+  (run (format "(let false = zero?(1)
+                 in let true = zero?(0)
+                    in let makeeven = proc (makeeven)
+                                        proc (makeodd)
+                                          proc (x)
+                                            if zero?(x)
+                                            then true
+                                            else (((makeodd makeeven) makeodd) -(x, 1))
+                       in let makeodd = proc (makeeven)
+                                          proc (makeodd)
+                                            proc (x)
+                                              if zero?(x)
+                                              then false
+                                              else (((makeeven makeeven) makeodd) -(x, 1))
+                          in ((makeodd makeeven) makeodd)
+                 ~a)" x)))
+
+(check-equal? (even? 0) (bool-val #t))
+(check-equal? (even? 1) (bool-val #f))
+(check-equal? (even? 2) (bool-val #t))
+(check-equal? (even? 3) (bool-val #f))
+(check-equal? (even? 4) (bool-val #t))
+(check-equal? (even? 5) (bool-val #f))
+(check-equal? (odd? 0) (bool-val #f))
+(check-equal? (odd? 1) (bool-val #t))
+(check-equal? (odd? 2) (bool-val #f))
+(check-equal? (odd? 3) (bool-val #t))
+(check-equal? (odd? 4) (bool-val #f))
+(check-equal? (odd? 5) (bool-val #t))
