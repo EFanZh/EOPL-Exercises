@@ -10,8 +10,6 @@ addons:
           - racket
 before_install:
   - if [ "$TRAVIS_OS_NAME" == osx ]; then brew cask install racket; fi
-before_script:
-  - racket -v
 script:
   - raco test tests
 notifications:
