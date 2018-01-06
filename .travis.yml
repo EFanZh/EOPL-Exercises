@@ -2,6 +2,8 @@ os:
   - linux
   - osx
 addons:
+    sources:
+      - sourceline: ppa:plt/racket
     apt:
         packages:
           - racket
@@ -9,7 +11,9 @@ before_install:
   - |
     if [ "$TRAVIS_OS_NAME" == osx ]
     then
-        brew install racket
+        brew install minimal-racket
     fi
+before_script:
+  - racket -v
 script:
   - raco test tests
