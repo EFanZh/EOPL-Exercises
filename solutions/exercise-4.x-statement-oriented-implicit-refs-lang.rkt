@@ -18,6 +18,7 @@
     [statement ("while" expression statement) while-statement]
     [statement ("var" (separated-list identifier ",") ";" statement) block-statement]
     [statement ("read" identifier) read-statement]
+    [statement ("do" statement "while" expression) do-while-statement]
     [expression (number) const-exp]
     [expression ("+" "(" expression "," expression ")") add-exp]
     [expression ("-" "(" expression "," expression ")") diff-exp]
@@ -266,10 +267,10 @@
     [if-statement (exp statement1 statement2) (if (expval->bool (value-of exp env))
                                                   (value-of-statement statement1 env)
                                                   (value-of-statement statement2 env))]
-    [while-statement (exp statement) (let loop ([condition (expval->bool (value-of exp env))])
-                                       (if condition
+    [while-statement (exp statement) (let loop ()
+                                       (if (expval->bool (value-of exp env))
                                            (begin (value-of-statement statement env)
-                                                  (loop (expval->bool (value-of exp env))))
+                                                  (loop))
                                            'break))]
     [block-statement (vars body) (let ([body-env (let loop ([vars vars]
                                                             [env env])
@@ -282,7 +283,12 @@
                             (if (and (integer? num)
                                      (not (negative? num)))
                                 (setref! (apply-env env var) (num-val num))
-                                (eopl:error 'value-of-statement "Expect a nonnegative integer, but got ~s." num)))]))
+                                (eopl:error 'value-of-statement "Expect a nonnegative integer, but got ~s." num)))]
+    [do-while-statement (statement exp) (let loop ()
+                                          (begin (value-of-statement statement env)
+                                                 (if (expval->bool (value-of exp env))
+                                                     (loop)
+                                                     'break)))]))
 
 (define value-of-program
   (lambda (pgm)
