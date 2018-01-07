@@ -17,6 +17,7 @@
     [statement ("if" expression statement statement) if-statement]
     [statement ("while" expression statement) while-statement]
     [statement ("var" (separated-list identifier ",") ";" statement) block-statement]
+    [statement ("read" identifier) read-statement]
     [expression (number) const-exp]
     [expression ("+" "(" expression "," expression ")") add-exp]
     [expression ("-" "(" expression "," expression ")") diff-exp]
@@ -276,7 +277,12 @@
                                                        env
                                                        (loop (cdr vars)
                                                              (extend-env (car vars) (newref (undefined-value)) env))))])
-                                   (value-of-statement body body-env))]))
+                                   (value-of-statement body body-env))]
+    [read-statement (var) (let ([num (read)])
+                            (if (and (integer? num)
+                                     (not (negative? num)))
+                                (setref! (apply-env env var) (num-val num))
+                                (eopl:error 'value-of-statement "Expect a nonnegative integer, but got ~s." num)))]))
 
 (define value-of-program
   (lambda (pgm)
