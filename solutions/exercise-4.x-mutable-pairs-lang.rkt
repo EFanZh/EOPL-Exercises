@@ -29,7 +29,8 @@
     [expression ("setright" expression "=" expression) setright-exp]
     [expression ("newarray" "(" expression "," expression ")") newarray-exp]
     [expression ("arrayref" "(" expression "," expression ")") arrayref-exp]
-    [expression ("arrayset" "(" expression "," expression "," expression ")") arrayset-exp]))
+    [expression ("arrayset" "(" expression "," expression "," expression ")") arrayset-exp]
+    [expression ("arraylength" "(" expression ")") arraylength-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
@@ -73,7 +74,10 @@
       [a-pair (left-loc right-loc) (setref! right-loc val)])))
 
 (define-datatype array array?
-  [an-array [ref reference?]])
+  [an-array [ref reference?]
+            [length (lambda (x)
+                      (and (integer? x)
+                           (positive? x)))]])
 
 (define (make-array length value)
   (if (positive? length)
@@ -82,16 +86,24 @@
           (if (< i length)
               (begin (newref value)
                      (loop (+ i 1)))
-              (an-array result))))
+              (an-array result length))))
       (eopl:error 'make-array "The array length must be greater than 0.")))
 
 (define (array-ref array1 index)
   (cases array array1
-    [an-array (ref) (deref (+ ref index))]))
+    [an-array (ref length) (if (< index length)
+                               (deref (+ ref index))
+                               (eopl:error 'array-ref "Array index out of bound."))]))
 
 (define (set-array! array1 index value)
   (cases array array1
-    [an-array (ref) (setref! (+ ref index) value)]))
+    [an-array (ref length) (if (< index length)
+                               (setref! (+ ref index) value)
+                               (eopl:error 'array-ref "Array index out of bound."))]))
+
+(define (array-length array1)
+  (cases array array1
+    [an-array (ref length) length]))
 
 (define-datatype expval expval?
   [num-val [value number?]]
@@ -288,7 +300,9 @@
                                            [index (expval->num (value-of exp2 env))]
                                            [value (value-of exp3 env)])
                                        (set-array! arr index value)
-                                       (num-val 73))])))
+                                       (num-val 73))]
+      [arraylength-exp (exp) (let ([arr (expval->array (value-of exp env))])
+                               (num-val (array-length arr)))])))
 
 (define value-of-program
   (lambda (pgm)
