@@ -1,7 +1,7 @@
 #lang racket
 
 (require rackunit)
-(require "../solutions/exercise-4.x-mutable-pairs-lang.rkt")
+(require "../solutions/exercise-4.x-call-by-reference-lang.rkt")
 
 (check-equal? (run "-(3, 3)") (num-val 0))
 (check-equal? (run "-(3, 4)") (num-val -1))
@@ -87,4 +87,27 @@
                        in begin (p a);
                                 a
                           end")
-              (num-val 3))
+              (num-val 4))
+
+(check-equal? (run "let f = proc (x)
+                              set x = 44
+                    in let g = proc (y)
+                                 (f y)
+                       in let z = 55
+                          in begin (g z);
+                                   z
+                             end")
+              (num-val 44))
+
+(check-equal? (run "let swap = proc (x)
+                                 proc (y)
+                                   let temp = x
+                                   in begin set x = y;
+                                            set y = temp
+                                      end
+                    in let a = 33
+                       in let b = 44
+                          in begin ((swap a) b);
+                                   -(a, b)
+                             end")
+              (num-val 11))

@@ -16,7 +16,7 @@
     [expression ("zero?" "(" expression ")") zero?-exp]
     [expression ("if" expression "then" expression "else" expression) if-exp]
     [expression (identifier) var-exp]
-    [expression ("let" (arbno identifier "=" expression) "in" expression) let-exp]
+    [expression ("let" identifier "=" expression "in" expression) let-exp]
     [expression ("proc" "(" identifier ")" expression) proc-exp]
     [expression ("(" expression expression ")") call-exp]
     [expression ("letrec" (arbno identifier "(" identifier ")" "=" expression) "in" expression) letrec-exp]
@@ -26,11 +26,7 @@
     [expression ("left" "(" expression ")") left-exp]
     [expression ("setleft" expression "=" expression) setleft-exp]
     [expression ("right" "(" expression ")") right-exp]
-    [expression ("setright" expression "=" expression) setright-exp]
-    [expression ("newarray" "(" expression "," expression ")") newarray-exp]
-    [expression ("arrayref" "(" expression "," expression ")") arrayref-exp]
-    [expression ("arrayset" "(" expression "," expression "," expression ")") arrayset-exp]
-    [expression ("arraylength" "(" expression ")") arraylength-exp]))
+    [expression ("setright" expression "=" expression) setright-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
@@ -44,73 +40,37 @@
              [body expression?]
              [env environment?]])
 
-(define-datatype mutpair mutpair?
-  [a-pair [left-loc reference?]
-          [right-loc reference?]])
+(define mutpair?
+  (lambda (v)
+    (reference? v)))
 
 (define make-pair
   (lambda (val1 val2)
-    (a-pair (newref val1)
-            (newref val2))))
+    (let ([ref1 (newref val1)])
+      (let ([ref2 (newref val2)])
+        ref1))))
 
 (define left
   (lambda (p)
-    (cases mutpair p
-      [a-pair (left-loc right-loc) (deref left-loc)])))
+    (deref p)))
 
 (define right
   (lambda (p)
-    (cases mutpair p
-      [a-pair (left-loc right-loc) (deref right-loc)])))
+    (deref (+ 1 p))))
 
 (define setleft
   (lambda (p val)
-    (cases mutpair p
-      [a-pair (left-loc right-loc) (setref! left-loc val)])))
+    (setref! p val)))
 
 (define setright
   (lambda (p val)
-    (cases mutpair p
-      [a-pair (left-loc right-loc) (setref! right-loc val)])))
-
-(define-datatype array array?
-  [an-array [ref reference?]
-            [length (lambda (x)
-                      (and (integer? x)
-                           (positive? x)))]])
-
-(define (make-array length value)
-  (if (positive? length)
-      (let ([result (newref value)])
-        (let loop ([i 1])
-          (if (< i length)
-              (begin (newref value)
-                     (loop (+ i 1)))
-              (an-array result length))))
-      (eopl:error 'make-array "The array length must be greater than 0.")))
-
-(define (array-ref array1 index)
-  (cases array array1
-    [an-array (ref length) (if (< index length)
-                               (deref (+ ref index))
-                               (eopl:error 'array-ref "Array index out of bound."))]))
-
-(define (set-array! array1 index value)
-  (cases array array1
-    [an-array (ref length) (if (< index length)
-                               (setref! (+ ref index) value)
-                               (eopl:error 'array-ref "Array index out of bound."))]))
-
-(define (array-length array1)
-  (cases array array1
-    [an-array (ref length) length]))
+    (setref! (+ 1 p) val)))
 
 (define-datatype expval expval?
   [num-val [value number?]]
   [bool-val [boolean boolean?]]
   [proc-val [proc proc?]]
-  [mutpair-val [p mutpair?]]
-  [array-val [array array?]])
+  [mutpair-val [p mutpair?]])
 
 (define expval-extractor-error
   (lambda (variant value)
@@ -137,14 +97,8 @@
 (define expval->mutpair
   (lambda (v)
     (cases expval v
-      [mutpair-val (p) p]
+      [mutpair-val (ref) ref]
       [else (expval-extractor-error 'mutable-pair v)])))
-
-(define expval->array
-  (lambda (v)
-    (cases expval v
-      [array-val (array) array]
-      [else (expval-extractor-error 'array v)])))
 
 ;; Environments.
 
@@ -202,7 +156,7 @@
       (set! the-store (append the-store (list val)))
       next-ref)))
 
-(define deref
+(define deref 
   (lambda (ref)
     (list-ref the-store ref)))
 
@@ -221,12 +175,17 @@
 
 ;; Interpreter.
 
+(define value-of-operand
+  (lambda (exp env)
+    (cases expression exp
+      [var-exp (var) (apply-env env var)]
+      [else (newref (value-of exp env))])))
+
 (define apply-procedure
-  (lambda (proc1 arg)
+  (lambda (proc1 val)
     (cases proc proc1
-      [procedure (var body saved-env) (let ([r (newref arg)])
-                                        (let ([new-env (extend-env var r saved-env)])
-                                          (value-of body new-env)))])))
+      [procedure (var body saved-env) (let ([new-env (extend-env var val saved-env)])
+                                        (value-of body new-env))])))
 
 (define value-of
   (lambda (exp env)
@@ -243,23 +202,11 @@
       [if-exp (exp0 exp1 exp2) (if (expval->bool (value-of exp0 env))
                                    (value-of exp1 env)
                                    (value-of exp2 env))]
-      [let-exp (ids rhses body) (let ([vals (map (lambda (rhs)
-                                                   (value-of rhs env))
-                                                 rhses)])
-                                  (value-of body
-                                            (let loop ([ids ids]
-                                                       [vals vals]
-                                                       [env env])
-                                              (if (null? ids)
-                                                  env
-                                                  (loop (cdr ids)
-                                                        (cdr vals)
-                                                        (extend-env (car ids)
-                                                                    (newref (car vals))
-                                                                    env))))))]
+      [let-exp (id rhs body) (let ([val (value-of rhs env)])
+                               (value-of body (extend-env id (newref val) env)))]
       [proc-exp (var body) (proc-val (procedure var body env))]
       [call-exp (rator rand) (let ([proc (expval->proc (value-of rator env))]
-                                   [arg (value-of rand env)])
+                                   [arg (value-of-operand rand env)])
                                (apply-procedure proc arg))]
       [letrec-exp (p-names b-vars p-bodies letrec-body) (value-of letrec-body
                                                                   (extend-env-rec* p-names b-vars p-bodies env))]
@@ -277,32 +224,19 @@
       [left-exp (exp1) (let ([v1 (value-of exp1 env)])
                          (let ([p1 (expval->mutpair v1)])
                            (left p1)))]
-      [right-exp (exp1) (let ([v1 (value-of exp1 env)])
-                          (let ([p1 (expval->mutpair v1)])
-                            (right p1)))]
       [setleft-exp (exp1 exp2) (let ([v1 (value-of exp1 env)]
                                      [v2 (value-of exp2 env)])
                                  (let ([p (expval->mutpair v1)])
                                    (begin (setleft p v2)
                                           (num-val 82))))]
+      [right-exp (exp1) (let ([v1 (value-of exp1 env)])
+                          (let ([p1 (expval->mutpair v1)])
+                            (right p1)))]
       [setright-exp (exp1 exp2) (let ([v1 (value-of exp1 env)]
                                       [v2 (value-of exp2 env)])
                                   (let ([p (expval->mutpair v1)])
                                     (begin (setright p v2)
-                                           (num-val 83))))]
-      [newarray-exp (exp1 exp2) (let ([length (expval->num (value-of exp1 env))]
-                                      [value (value-of exp2 env)])
-                                  (array-val (make-array length value)))]
-      [arrayref-exp (exp1 exp2) (let ([arr (expval->array (value-of exp1 env))]
-                                      [index (expval->num (value-of exp2 env))])
-                                  (array-ref arr index))]
-      [arrayset-exp (exp1 exp2 exp3) (let ([arr (expval->array (value-of exp1 env))]
-                                           [index (expval->num (value-of exp2 env))]
-                                           [value (value-of exp3 env)])
-                                       (set-array! arr index value)
-                                       (num-val 73))]
-      [arraylength-exp (exp) (let ([arr (expval->array (value-of exp env))])
-                               (num-val (array-length arr)))])))
+                                           (num-val 83))))])))
 
 (define value-of-program
   (lambda (pgm)
