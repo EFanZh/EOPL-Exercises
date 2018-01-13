@@ -1,5 +1,11 @@
 #lang eopl
 
+;; Exercise 4.27 [★★] Extend the language of the preceding exercise to include subroutines. In our usage a subroutine
+;; is like a procedure, except that it does not return a value and its body is a statement, rather than an expression.
+;; Also, add subroutine calls as a new kind of statement and extend the syntax of blocks so that they may be used to
+;; declare both procedures and subroutines. How does this affect the denoted and expressed values? What happens if a
+;; procedure is referenced in a subroutine call, or vice versa?
+
 ;; Grammar.
 
 (define the-lexical-spec

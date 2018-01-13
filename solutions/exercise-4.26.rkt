@@ -1,5 +1,9 @@
 #lang eopl
 
+;; Exercise 4.26 [★★★] Extend the solution to the preceding exercise so that procedures declared in a single block
+;; aremutually recursive. Consider restricting the language so that the variable declarations in a block are followed by
+;; the procedure declarations.
+
 ;; Grammar.
 
 (define the-lexical-spec

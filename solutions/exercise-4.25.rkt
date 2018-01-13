@@ -1,5 +1,9 @@
 #lang eopl
 
+;; Exercise 4.25 [★] Extend the block statement of the language of exercise 4.22 to allow variables to be initialized.
+;; In your solution, does the scope of a variable include the initializer for variables declared later in the same block
+;; statement?
+
 ;; Grammar.
 
 (define the-lexical-spec
