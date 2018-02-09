@@ -103,8 +103,8 @@
                               begin set x = 3;
                                     4
                               end
-                        in let x = 5
-                           in begin (f x);
-                                    x
-                              end")
+                    in let x = 5
+                       in begin (f x);
+                                x
+                          end")
               (num-val 4))
