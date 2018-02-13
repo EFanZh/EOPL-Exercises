@@ -17,6 +17,7 @@
     [expression ("if" expression "then" expression "else" expression) if-exp]
     [expression (identifier) var-exp]
     [expression ("let" identifier "=" expression "in" expression) let-exp]
+    [expression ("let*" identifier "=" expression "in" expression) let*-exp]
     [expression ("proc" "(" identifier ")" expression) proc-exp]
     [expression ("(" expression expression ")") call-exp]
     [expression ("letrec" (arbno identifier "(" identifier ")" "=" expression) "in" expression) letrec-exp]
@@ -220,6 +221,8 @@
                                    (value-of exp2 env))]
       [let-exp (var exp1 body) (let ([val (value-of exp1 env)])
                                  (value-of body (extend-env var (newref val) env)))]
+      [let*-exp (var exp1 body) (let ([val (value-of-operand exp1 env)])
+                                  (value-of body (extend-env var val env)))]
       [proc-exp (var body) (proc-val (procedure var body env))]
       [call-exp (rator rand) (let ([proc (expval->proc (value-of rator env))]
                                    [arg (value-of-operand rand env)])
