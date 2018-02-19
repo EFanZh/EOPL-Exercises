@@ -17,6 +17,9 @@
     [expression ("if" expression "then" expression "else" expression) if-exp]
     [expression (identifier) var-exp]
     [expression ("let" identifier "=" expression "in" expression) let-exp]
+    [expression ("let2" identifier "=" expression identifier "=" expression "in" expression) let2-exp]
+    [expression ("let3" identifier "=" expression identifier "=" expression identifier "=" expression "in" expression)
+                let3-exp]
     [expression ("proc" "(" identifier ")" expression) proc-exp]
     [expression ("(" expression expression ")") call-exp]
     [expression ("letrec" identifier "(" identifier ")" "=" expression "in" expression) letrec-exp]))
@@ -78,6 +81,42 @@
                 [body expression?]
                 [saved-env environment?]
                 [saved-cont continuation?]]
+  [let2-exp1-cont [var1 identifier?]
+                  [var2 identifier?]
+                  [exp2 expression?]
+                  [body expression?]
+                  [saved-env environment?]
+                  [saved-cont continuation?]]
+  [let2-exp2-cont [var1 identifier?]
+                  [val1 expval?]
+                  [var2 identifier?]
+                  [body expression?]
+                  [saved-env environment?]
+                  [saved-cont continuation?]]
+  [let3-exp1-cont [var1 identifier?]
+                  [var2 identifier?]
+                  [exp2 expression?]
+                  [var3 identifier?]
+                  [exp3 expression?]
+                  [body expression?]
+                  [saved-env environment?]
+                  [saved-cont continuation?]]
+  [let3-exp2-cont [var1 identifier?]
+                  [val1 expval?]
+                  [var2 identifier?]
+                  [var3 identifier?]
+                  [exp3 expression?]
+                  [body expression?]
+                  [saved-env environment?]
+                  [saved-cont continuation?]]
+  [let3-exp3-cont [var1 identifier?]
+                  [val1 expval?]
+                  [var2 identifier?]
+                  [val2 expval?]
+                  [var3 identifier?]
+                  [body expression?]
+                  [saved-env environment?]
+                  [saved-cont continuation?]]
   [if-test-cont [exp2 expression?]
                 [exp3 expression?]
                 [saved-env environment?]
@@ -115,6 +154,51 @@
       [let-exp-cont (var body saved-env saved-cont) (value-of/k body
                                                                 (extend-env var val saved-env)
                                                                 saved-cont)]
+      [let2-exp1-cont (var1 var2 exp2 body saved-env saved-cont) (value-of/k exp2
+                                                                             saved-env
+                                                                             (let2-exp2-cont var1
+                                                                                             val
+                                                                                             var2
+                                                                                             body
+                                                                                             saved-env
+                                                                                             saved-cont))]
+      [let2-exp2-cont (var1 val1 var2 body saved-env saved-cont) (value-of/k body
+                                                                             (extend-env var2
+                                                                                         val
+                                                                                         (extend-env var1
+                                                                                                     val1
+                                                                                                     saved-env))
+                                                                             saved-cont)]
+      [let3-exp1-cont (var1 var2 exp2 var3 exp3 body saved-env saved-cont) (value-of/k exp2
+                                                                                       saved-env
+                                                                                       (let3-exp2-cont var1
+                                                                                                       val
+                                                                                                       var2
+                                                                                                       var3
+                                                                                                       exp3
+                                                                                                       body
+                                                                                                       saved-env
+                                                                                                       saved-cont))]
+      [let3-exp2-cont (var1 val1 var2 var3 exp3 body saved-env saved-cont) (value-of/k exp3
+                                                                                       saved-env
+                                                                                       (let3-exp3-cont var1
+                                                                                                       val1
+                                                                                                       var2
+                                                                                                       val
+                                                                                                       var3
+                                                                                                       body
+                                                                                                       saved-env
+                                                                                                       saved-cont))]
+      [let3-exp3-cont (var1 val1 var2 val2 var3 body saved-env saved-cont)
+                      (value-of/k body
+                                  (extend-env var1
+                                              val1
+                                              (extend-env var2
+                                                          val2
+                                                          (extend-env var3
+                                                                      val
+                                                                      saved-env)))
+                                  saved-cont)]
       [if-test-cont (exp2 exp3 saved-env saved-cont) (if (expval->bool val)
                                                          (value-of/k exp2 saved-env saved-cont)
                                                          (value-of/k exp3 saved-env saved-cont))]
@@ -152,6 +236,17 @@
                                                                 cont)]
       [zero?-exp (exp1) (value-of/k exp1 env (zero1-cont cont))]
       [let-exp (var exp1 body) (value-of/k exp1 env (let-exp-cont var body env cont))]
+      [let2-exp (var1 exp1 var2 exp2 body) (value-of/k exp1 env (let2-exp1-cont var1 var2 exp2 body env cont))]
+      [let3-exp (var1 exp1 var2 exp2 var3 exp3 body) (value-of/k exp1
+                                                                 env
+                                                                 (let3-exp1-cont var1
+                                                                                 var2
+                                                                                 exp2
+                                                                                 var3
+                                                                                 exp3
+                                                                                 body
+                                                                                 env
+                                                                                 cont))]
       [if-exp (exp1 exp2 exp3) (value-of/k exp1 env (if-test-cont exp2 exp3 env cont))]
       [diff-exp (exp1 exp2) (value-of/k exp1 env (diff1-cont exp2 env cont))]
       [call-exp (rator rand) (value-of/k rator env (rator-cont rand env cont))])))
