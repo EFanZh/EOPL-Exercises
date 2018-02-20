@@ -22,7 +22,12 @@
                 let3-exp]
     [expression ("proc" "(" identifier ")" expression) proc-exp]
     [expression ("(" expression expression ")") call-exp]
-    [expression ("letrec" identifier "(" identifier ")" "=" expression "in" expression) letrec-exp]))
+    [expression ("letrec" identifier "(" identifier ")" "=" expression "in" expression) letrec-exp]
+    [expression ("cons" "(" expression "," expression ")") cons-exp]
+    [expression ("car" "(" expression ")") car-exp]
+    [expression ("cdr" "(" expression ")") cdr-exp]
+    [expression ("null?" "(" expression ")") null?-exp]
+    [expression ("emptylist") emptylist-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
@@ -38,7 +43,10 @@
 (define-datatype expval expval?
   [num-val [value number?]]
   [bool-val [boolean boolean?]]
-  [proc-val [proc proc?]])
+  [proc-val [proc proc?]]
+  [emptylist-val]
+  [pair-val [car expval?]
+            [cdr expval?]])
 
 (define expval-extractor-error
   (lambda (variant value)
@@ -61,6 +69,23 @@
     (cases expval v
       [proc-val (proc) proc]
       [else (expval-extractor-error 'proc v)])))
+
+(define expval->car
+  (lambda (v)
+    (cases expval v
+      [pair-val (car cdr) car]
+      [else (expval-extractor-error 'pair v)])))
+
+(define expval->cdr
+  (lambda (v)
+    (cases expval v
+      [pair-val (car cdr) cdr]
+      [else (expval-extractor-error 'pair v)])))
+
+(define (expval-null? v)
+  (cases expval v
+      [emptylist-val () #t]
+      [else #f]))
 
 (define-datatype environment environment?
   [empty-env]
@@ -130,7 +155,15 @@
               [saved-env environment?]
               [saved-cont continuation?]]
   [rand-cont [val1 expval?]
-             [saved-cont continuation?]])
+             [saved-cont continuation?]]
+  [cons-exp1-cont [exp2 expression?]
+                  [saved-env environment?]
+                  [saved-cont continuation?]]
+  [cons-exp2-cont [val1 expval?]
+                  [saved-cont continuation?]]
+  [car-cont [saved-cont continuation?]]
+  [cdr-cont [saved-cont continuation?]]
+  [null?-cont [saved-cont continuation?]])
 
 ;; Interpreter.
 
@@ -212,7 +245,14 @@
                                                           saved-env
                                                           (rand-cont val saved-cont))]
       [rand-cont (val1 saved-cont) (let ([proc (expval->proc val1)])
-                                     (apply-procedure/k proc val saved-cont))])))
+                                     (apply-procedure/k proc val saved-cont))]
+      [cons-exp1-cont (exp2 saved-env saved-cont) (value-of/k exp2
+                                                              saved-env
+                                                              (cons-exp2-cont val saved-cont))]
+      [cons-exp2-cont (val1 saved-cont) (apply-cont saved-cont (pair-val val1 val))]
+      [car-cont (saved-cont) (apply-cont saved-cont (expval->car val))]
+      [cdr-cont (saved-cont) (apply-cont saved-cont (expval->cdr val))]
+      [null?-cont (saved-cont) (apply-cont saved-cont (bool-val (expval-null? val)))])))
 
 (define apply-env
   (lambda (env search-sym)
@@ -249,7 +289,12 @@
                                                                                  cont))]
       [if-exp (exp1 exp2 exp3) (value-of/k exp1 env (if-test-cont exp2 exp3 env cont))]
       [diff-exp (exp1 exp2) (value-of/k exp1 env (diff1-cont exp2 env cont))]
-      [call-exp (rator rand) (value-of/k rator env (rator-cont rand env cont))])))
+      [call-exp (rator rand) (value-of/k rator env (rator-cont rand env cont))]
+      [cons-exp (exp1 exp2) (value-of/k exp1 env (cons-exp1-cont exp2 env cont))]
+      [car-exp (exp1) (value-of/k exp1 env (car-cont cont))]
+      [cdr-exp (exp1) (value-of/k exp1 env (cdr-cont cont))]
+      [null?-exp (exp1) (value-of/k exp1 env (null?-cont cont))]
+      [emptylist-exp () (apply-cont cont (emptylist-val))])))
 
 (define (init-env)
   (empty-env))
@@ -267,4 +312,4 @@
   (lambda (string)
     (value-of-program (scan&parse string))))
 
-(provide bool-val num-val run)
+(provide bool-val emptylist-val num-val pair-val run)
