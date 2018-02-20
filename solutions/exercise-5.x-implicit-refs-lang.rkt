@@ -13,6 +13,7 @@
   '([program (expression) a-program]
     [expression (number) const-exp]
     [expression ("-" "(" expression "," expression ")") diff-exp]
+    [expression ("*" "(" expression "," expression ")") multiply-exp]
     [expression ("zero?" "(" expression ")") zero?-exp]
     [expression ("if" expression "then" expression "else" expression) if-exp]
     [expression (identifier) var-exp]
@@ -90,6 +91,11 @@
               [saved-cont continuation?]]
   [diff2-cont [val1 expval?]
               [saved-cont continuation?]]
+  [multiply1-cont [exp2 expression?]
+                  [saved-env environment?]
+                  [saved-cont continuation?]]
+  [multiply2-cont [val1 expval?]
+                  [saved-cont continuation?]]
   [rator-cont [rand expression?]
               [saved-env environment?]
               [saved-cont continuation?]]
@@ -164,6 +170,10 @@
       [diff2-cont (val1 saved-cont) (let ([num1 (expval->num val1)]
                                           [num2 (expval->num val)])
                                       (apply-cont saved-cont (num-val (- num1 num2))))]
+      [multiply1-cont (exp2 saved-env saved-cont) (value-of/k exp2 saved-env (multiply2-cont val saved-cont))]
+      [multiply2-cont (val1 saved-cont) (let ([num1 (expval->num val1)]
+                                              [num2 (expval->num val)])
+                                          (apply-cont saved-cont (num-val (* num1 num2))))]
       [rator-cont (rand saved-env saved-cont) (value-of/k rand saved-env (rand-cont val saved-cont))]
       [rand-cont (val1 saved-cont) (let ([proc (expval->proc val1)])
                                      (apply-procedure/k proc val saved-cont))]
@@ -212,6 +222,7 @@
       [let-exp (var exp1 body) (value-of/k exp1 env (let-exp-cont var body env cont))]
       [if-exp (exp1 exp2 exp3) (value-of/k exp1 env (if-test-cont exp2 exp3 env cont))]
       [diff-exp (exp1 exp2) (value-of/k exp1 env (diff1-cont exp2 env cont))]
+      [multiply-exp (exp1 exp2) (value-of/k exp1 env (multiply1-cont exp2 env cont))]
       [call-exp (rator rand) (value-of/k rator env (rator-cont rand env cont))]
       [begin-exp (exp1 exps) (value-of/k exp1 env (begin-cont exps env cont))]
       [assign-exp (var exp1) (value-of/k exp1 env (set-rhs-cont (apply-env env var) cont))])))
