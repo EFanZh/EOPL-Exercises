@@ -16,7 +16,7 @@
     [expression ("zero?" "(" expression ")") zero?-exp]
     [expression ("if" expression "then" expression "else" expression) if-exp]
     [expression (identifier) var-exp]
-    [expression ("let" identifier "=" expression "in" expression) let-exp]
+    [expression ("let" (arbno identifier "=" expression) "in" expression) let-exp]
     [expression ("let2" identifier "=" expression identifier "=" expression "in" expression) let2-exp]
     [expression ("let3" identifier "=" expression identifier "=" expression identifier "=" expression "in" expression)
                 let3-exp]
@@ -103,10 +103,12 @@
 (define-datatype continuation continuation?
   [end-cont]
   [zero1-cont [saved-cont continuation?]]
-  [let-exp-cont [var identifier?]
-                [body expression?]
-                [saved-env environment?]
-                [saved-cont continuation?]]
+  [let-exps-cont [vars (list-of identifier?)]
+                 [vals (list-of expval?)]
+                 [exps (list-of expression?)]
+                 [body expression?]
+                 [saved-env environment?]
+                 [saved-cont continuation?]]
   [let2-exp1-cont [var1 identifier?]
                   [var2 identifier?]
                   [exp2 expression?]
@@ -189,9 +191,28 @@
                        (begin (set! used-end-conts (cons cont used-end-conts))
                               val))]
       [zero1-cont (saved-cont) (apply-cont saved-cont (bool-val (zero? (expval->num val))))]
-      [let-exp-cont (var body saved-env saved-cont) (value-of/k body
-                                                                (extend-env var val saved-env)
-                                                                saved-cont)]
+      [let-exps-cont (vars vals exps body saved-env saved-cont) (if (null? exps)
+                                                                    (value-of/k body
+                                                                                (let loop ([env saved-env]
+                                                                                           [vars vars]
+                                                                                           [vals (reverse (cons val
+                                                                                                                vals))])
+                                                                                  (if (null? vars)
+                                                                                      env
+                                                                                      (loop (extend-env (car vars)
+                                                                                                        (car vals)
+                                                                                                        env)
+                                                                                            (cdr vars)
+                                                                                            (cdr vals))))
+                                                                                saved-cont)
+                                                                    (value-of/k (car exps)
+                                                                                saved-env
+                                                                                (let-exps-cont vars
+                                                                                               (cons val vals)
+                                                                                               (cdr exps)
+                                                                                               body
+                                                                                               saved-env
+                                                                                               saved-cont)))]
       [let2-exp1-cont (var1 var2 exp2 body saved-env saved-cont) (value-of/k exp2
                                                                              saved-env
                                                                              (let2-exp2-cont var1
@@ -295,7 +316,16 @@
                                                                 (extend-env-rec p-name b-var p-body env)
                                                                 cont)]
       [zero?-exp (exp1) (value-of/k exp1 env (zero1-cont cont))]
-      [let-exp (var exp1 body) (value-of/k exp1 env (let-exp-cont var body env cont))]
+      [let-exp (vars exps body) (if (null? vars)
+                                    (value-of/k body env cont)
+                                    (value-of/k (car exps)
+                                                env
+                                                (let-exps-cont vars
+                                                               '()
+                                                               (cdr exps)
+                                                               body
+                                                               env
+                                                               cont)))]
       [let2-exp (var1 exp1 var2 exp2 body) (value-of/k exp1 env (let2-exp1-cont var1 var2 exp2 body env cont))]
       [let3-exp (var1 exp1 var2 exp2 var3 exp3 body) (value-of/k exp1
                                                                  env
