@@ -125,8 +125,6 @@
                                                   (extend-env var arg saved-env)
                                                   cont)])))
 
-(define used-end-conts '())
-
 (define apply-cont
   (lambda (cont val)
     (cont val)))
