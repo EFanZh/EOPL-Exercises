@@ -27,7 +27,8 @@
     [expression ("car" "(" expression ")") car-exp]
     [expression ("cdr" "(" expression ")") cdr-exp]
     [expression ("null?" "(" expression ")") null?-exp]
-    [expression ("emptylist") emptylist-exp]))
+    [expression ("emptylist") emptylist-exp]
+    [expression ("list" "(" (separated-list expression ",") ")") list-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
@@ -84,8 +85,8 @@
 
 (define (expval-null? v)
   (cases expval v
-      [emptylist-val () #t]
-      [else #f]))
+    [emptylist-val () #t]
+    [else #f]))
 
 (define-datatype environment environment?
   [empty-env]
@@ -163,7 +164,11 @@
                   [saved-cont continuation?]]
   [car-cont [saved-cont continuation?]]
   [cdr-cont [saved-cont continuation?]]
-  [null?-cont [saved-cont continuation?]])
+  [null?-cont [saved-cont continuation?]]
+  [list-exps-cont [vals (list-of expval?)]
+                  [exps (list-of expression?)]
+                  [saved-env environment?]
+                  [saved-cont continuation?]])
 
 ;; Interpreter.
 
@@ -252,7 +257,22 @@
       [cons-exp2-cont (val1 saved-cont) (apply-cont saved-cont (pair-val val1 val))]
       [car-cont (saved-cont) (apply-cont saved-cont (expval->car val))]
       [cdr-cont (saved-cont) (apply-cont saved-cont (expval->cdr val))]
-      [null?-cont (saved-cont) (apply-cont saved-cont (bool-val (expval-null? val)))])))
+      [null?-cont (saved-cont) (apply-cont saved-cont (bool-val (expval-null? val)))]
+      [list-exps-cont (vals exps saved-env saved-cont) (if (null? exps)
+                                                           (apply-cont saved-cont
+                                                                       (let loop ([result (pair-val val
+                                                                                                    (emptylist-val))]
+                                                                                  [vals vals])
+                                                                         (if (null? vals)
+                                                                             result
+                                                                             (loop (pair-val (car vals) result)
+                                                                                   (cdr vals)))))
+                                                           (value-of/k (car exps)
+                                                                       saved-env
+                                                                       (list-exps-cont (cons val vals)
+                                                                                       (cdr exps)
+                                                                                       saved-env
+                                                                                       saved-cont)))])))
 
 (define apply-env
   (lambda (env search-sym)
@@ -294,7 +314,15 @@
       [car-exp (exp1) (value-of/k exp1 env (car-cont cont))]
       [cdr-exp (exp1) (value-of/k exp1 env (cdr-cont cont))]
       [null?-exp (exp1) (value-of/k exp1 env (null?-cont cont))]
-      [emptylist-exp () (apply-cont cont (emptylist-val))])))
+      [emptylist-exp () (apply-cont cont (emptylist-val))]
+      [list-exp (exps) (if (null? exps)
+                           (apply-cont cont (emptylist-val))
+                           (value-of/k (car exps)
+                                       env
+                                       (list-exps-cont '()
+                                                       (cdr exps)
+                                                       env
+                                                       cont)))])))
 
 (define (init-env)
   (empty-env))
