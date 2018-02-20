@@ -98,8 +98,7 @@
   [begin-cont [exps (list-of expression?)]
               [saved-env environment?]
               [saved-cont continuation?]]
-  [set-rhs-cont [var identifier?]
-                [saved-env environment?]
+  [set-rhs-cont [ref reference?]
                 [saved-cont continuation?]])
 
 ;; Store.
@@ -175,8 +174,8 @@
                                                               (begin-cont (cdr exps)
                                                                           saved-env
                                                                           saved-cont)))]
-      [set-rhs-cont (var saved-env saved-cont) (begin (setref! (apply-env saved-env var) val)
-                                                      (apply-cont saved-cont (num-val 27)))])))
+      [set-rhs-cont (ref saved-cont) (begin (setref! ref val)
+                                            (apply-cont saved-cont (num-val 27)))])))
 
 (define location
   (lambda (sym syms)
@@ -215,7 +214,7 @@
       [diff-exp (exp1 exp2) (value-of/k exp1 env (diff1-cont exp2 env cont))]
       [call-exp (rator rand) (value-of/k rator env (rator-cont rand env cont))]
       [begin-exp (exp1 exps) (value-of/k exp1 env (begin-cont exps env cont))]
-      [assign-exp (var exp1) (value-of/k exp1 env (set-rhs-cont var env cont))])))
+      [assign-exp (var exp1) (value-of/k exp1 env (set-rhs-cont (apply-env env var) cont))])))
 
 (define (init-env)
   (empty-env))
