@@ -118,7 +118,7 @@
       [end-cont () (if (memq cont used-end-conts)
                        (eopl:error "Continuation is already used.")
                        (begin (set! used-end-conts (cons cont used-end-conts))
-                              val))]
+                              (expval-bounce val)))]
       [zero1-cont (saved-cont) (apply-cont saved-cont (bool-val (zero? (expval->num val))))]
       [let-exp-cont (var body saved-env saved-cont) (value-of/k body
                                                                 (extend-env var val saved-env)

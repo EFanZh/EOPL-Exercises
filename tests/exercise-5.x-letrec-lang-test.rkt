@@ -3,6 +3,7 @@
 (require rackunit)
 (require "../solutions/exercise-5.x-letrec-lang.rkt")
 
+(check-equal? (run "2") (num-val 2))
 (check-equal? (run "-(3, 3)") (num-val 0))
 (check-equal? (run "-(3, 4)") (num-val -1))
 (check-equal? (run "-(4, 3)") (num-val 1))
