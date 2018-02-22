@@ -1,5 +1,8 @@
 #lang eopl
 
+;; Exercise 5.18 [★] The trampoline systemin figure 5.7 uses a procedural representation of a Bounce. Replace this by a
+;; data structure representation.
+
 ;; Grammar.
 
 (define the-lexical-spec
