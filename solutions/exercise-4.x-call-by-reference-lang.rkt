@@ -297,8 +297,9 @@
                                                                v1
                                                                (value-of-begins (car es) (cdr es)))))])
                                (value-of-begins exp1 exps))]
-      [assign-exp (x e) (begin (setref! (apply-env env x) (value-of e env))
-                               (num-val 27))]
+      [assign-exp (x e)
+                  (setref! (apply-env env x) (value-of e env))
+                  (num-val 27)]
       [newpair-exp (exp1 exp2) (let ([v1 (value-of exp1 env)]
                                      [v2 (value-of exp2 env)])
                                  (mutpair-val (make-pair v1 v2)))]

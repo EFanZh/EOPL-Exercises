@@ -324,12 +324,15 @@
                                      env
                                      (lambda (val)
                                        (cases expval val
-                                         [num-val (num) (begin (display num)
-                                                               (newline))]
-                                         [bool-val (bool) (begin (display bool)
-                                                                 (newline))]
-                                         [proc-val (proc) (begin (display "<procedure>")
-                                                                 (newline))])
+                                         [num-val (num)
+                                                  (display num)
+                                                  (newline)]
+                                         [bool-val (bool)
+                                                   (display bool)
+                                                   (newline)]
+                                         [proc-val (proc)
+                                                   (display "<procedure>")
+                                                   (newline)])
                                        (apply-command-cont cont)))]
     [brace-statement (statements) (if (null? statements)
                                       (apply-command-cont cont)

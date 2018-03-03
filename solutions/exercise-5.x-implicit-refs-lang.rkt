@@ -184,8 +184,9 @@
                                                               (begin-cont (cdr exps)
                                                                           saved-env
                                                                           saved-cont)))]
-      [set-rhs-cont (ref saved-cont) (begin (setref! ref val)
-                                            (apply-cont saved-cont (num-val 27)))])))
+      [set-rhs-cont (ref saved-cont)
+                    (setref! ref val)
+                    (apply-cont saved-cont (num-val 27))])))
 
 (define location
   (lambda (sym syms)

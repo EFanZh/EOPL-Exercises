@@ -240,22 +240,25 @@
                                                                v1
                                                                (value-of-begins (car es) (cdr es)))))])
                                (value-of-begins exp1 exps))]
-      [assign-exp (var exp1) (begin (setref! (apply-env env var)
-                                             (value-of exp1 env))
-                                    (num-val 27))])))
+      [assign-exp (var exp1)
+                  (setref! (apply-env env var) (value-of exp1 env))
+                  (num-val 27)])))
 
 (define (value-of-statement statement1 env)
   (cases statement statement1
-    [assign-statement (var exp) (begin (setref! (apply-env env var)
-                                                (value-of exp env))
-                                       (num-val 27))]
+    [assign-statement (var exp)
+                      (setref! (apply-env env var) (value-of exp env))
+                      (num-val 27)]
     [print-statement (exp) (cases expval (value-of exp env)
-                             [num-val (num) (begin (display num)
-                                                   (newline))]
-                             [bool-val (bool) (begin (display bool)
-                                                     (newline))]
-                             [proc-val (proc) (begin (display "<procedure>")
-                                                     (newline))])]
+                             [num-val (num)
+                                      (display num)
+                                      (newline)]
+                             [bool-val (bool)
+                                       (display bool)
+                                       (newline)]
+                             [proc-val (proc)
+                                       (display "<procedure>")
+                                       (newline)])]
     [brace-statement (statements) (for-each (lambda (s)
                                               (value-of-statement s env))
                                             statements)]

@@ -224,9 +224,9 @@
                                                                v1
                                                                (value-of-begins (car es) (cdr es)))))])
                                (value-of-begins exp1 exps))]
-      [assign-exp (var exp1) (begin (setref! (apply-env env var)
-                                             (value-of exp1 env))
-                                    (num-val 27))]
+      [assign-exp (var exp1)
+                  (setref! (apply-env env var) (value-of exp1 env))
+                  (num-val 27)]
       [dynamic-assign-exp (var exp body) (let* ([ref (apply-env env var)]
                                                 [new-val (value-of exp env)]
                                                 [saved-val (deref ref)])
