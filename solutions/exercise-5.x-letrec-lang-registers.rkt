@@ -17,9 +17,10 @@
     [expression ("if" expression "then" expression "else" expression) if-exp]
     [expression (identifier) var-exp]
     [expression ("let" identifier "=" expression "in" expression) let-exp]
-    [expression ("proc" "(" identifier ")" expression) proc-exp]
-    [expression ("(" expression expression ")") call-exp]
-    [expression ("letrec" identifier "(" identifier ")" "=" expression "in" expression) letrec-exp]))
+    [expression ("proc" "(" (separated-list identifier ",") ")" expression) proc-exp]
+    [expression ("(" expression (arbno expression) ")") call-exp]
+    [expression ("letrec" identifier "(" (separated-list identifier ",") ")" "=" expression "in" expression)
+                letrec-exp]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
 
@@ -28,7 +29,7 @@
 ;; Data structures.
 
 (define-datatype proc proc?
-  [procedure [bvar symbol?]
+  [procedure [bvars (list-of symbol?)]
              [body expression?]
              [env environment?]])
 
@@ -65,7 +66,7 @@
               [bval expval?]
               [saved-env environment?]]
   [extend-env-rec [p-name symbol?]
-                  [b-var symbol?]
+                  [b-vars (list-of symbol?)]
                   [p-body expression?]
                   [saved-env environment?]])
 
@@ -87,10 +88,13 @@
               [saved-cont continuation?]]
   [diff2-cont [val1 expval?]
               [saved-cont continuation?]]
-  [rator-cont [rand expression?]
+  [rator-cont [rands (list-of expression?)]
               [saved-env environment?]
               [saved-cont continuation?]]
   [rand-cont [val1 expval?]
+             [vals (list-of expval?)]
+             [rands (list-of expression?)]
+             [saved-env environment?]
              [saved-cont continuation?]])
 
 ;; Interpreter.
@@ -99,14 +103,24 @@
 (define env 'uninitialized)
 (define cont 'uninitialized)
 (define val 'uninitialized)
+(define vals 'uninitialized)
 (define proc1 'uninitialized)
 
 (define apply-procedure/k
   (lambda ()
     (cases proc proc1
-      [procedure (var body saved-env)
+      [procedure (vars body saved-env)
                  (set! exp body)
-                 (set! env (extend-env var val saved-env))
+                 (set! env (let loop ([env saved-env]
+                                      [vars vars]
+                                      [vals vals])
+                             (if (null? vars)
+                                 env
+                                 (loop (extend-env (car vars)
+                                                   (car vals)
+                                                   env)
+                                       (cdr vars)
+                                       (cdr vals)))))
                  (value-of/k)])))
 
 (define used-end-conts '())
@@ -145,17 +159,35 @@
                     (set! cont saved-cont)
                     (set! val (num-val (- num1 num2)))
                     (apply-cont))]
-      [rator-cont (rand saved-env saved-cont)
-                  (set! cont (rand-cont val saved-cont))
-                  (set! exp rand)
-                  (set! env saved-env)
-                  (value-of/k)]
-      [rand-cont (rator-val saved-cont)
-                 (let ([rator-proc (expval->proc rator-val)])
-                   (set! cont saved-cont)
-                   (set! proc1 rator-proc)
-                   (set! val val)
-                   (apply-procedure/k))])))
+      [rator-cont (rands saved-env saved-cont)
+                  (if (null? rands)
+                      (let ([rator-proc (expval->proc val)])
+                        (set! cont saved-cont)
+                        (set! proc1 rator-proc)
+                        (apply-procedure/k))
+                      (begin (set! cont (rand-cont val
+                                                   '()
+                                                   (cdr rands)
+                                                   saved-env
+                                                   saved-cont))
+                             (set! exp (car rands))
+                             (set! env saved-env)
+                             (value-of/k)))]
+      [rand-cont (rator-val rand-vals rand-exps saved-env saved-cont)
+                 (if (null? rand-exps)
+                     (let ([rator-proc (expval->proc rator-val)])
+                       (set! cont saved-cont)
+                       (set! proc1 rator-proc)
+                       (set! vals (reverse (cons val rand-vals)))
+                       (apply-procedure/k))
+                     (begin (set! cont (rand-cont rator-val
+                                                  (cons val rand-vals)
+                                                  (cdr rand-exps)
+                                                  saved-env
+                                                  saved-cont))
+                            (set! exp (car rand-exps))
+                            (set! env saved-env)
+                            (value-of/k)))])))
 
 (define apply-env
   (lambda (env search-sym)
@@ -177,12 +209,12 @@
       [var-exp (var)
                (set! val (apply-env env var))
                (apply-cont)]
-      [proc-exp (var body)
-                (set! val (proc-val (procedure var body env)))
+      [proc-exp (vars body)
+                (set! val (proc-val (procedure vars body env)))
                 (apply-cont)]
-      [letrec-exp (p-name b-var p-body letrec-body)
+      [letrec-exp (p-name b-vars p-body letrec-body)
                   (set! exp letrec-body)
-                  (set! env (extend-env-rec p-name b-var p-body env))
+                  (set! env (extend-env-rec p-name b-vars p-body env))
                   (value-of/k)]
       [zero?-exp (exp1)
                  (set! cont (zero1-cont cont))
@@ -200,8 +232,8 @@
                 (set! cont (diff1-cont exp2 env cont))
                 (set! exp exp1)
                 (value-of/k)]
-      [call-exp (rator rand)
-                (set! cont (rator-cont rand env cont))
+      [call-exp (rator rands)
+                (set! cont (rator-cont rands env cont))
                 (set! exp rator)
                 (value-of/k)])))
 
