@@ -1,7 +1,7 @@
 #lang eopl
 
 ;; Exercise 5.40 [★★★] Give the exception handlers in the defined language the ability to either return or resume. Do
-;; this by passing the continuation fromthe raise exception as a second argument. This may require adding continuations
+;; this by passing the continuation from the raise exception as a second argument. This may require adding continuations
 ;; as a new kind of expressed value. Devise suitable syntax for invoking a continuation on a value.
 
 ;; Grammar.
