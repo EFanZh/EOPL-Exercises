@@ -1,6 +1,6 @@
 #lang eopl
 
-;; Exercise 5.39 [??] So far, an exception handler can propagate the exception by reraising it, or it can return a value
+;; Exercise 5.39 [★★] So far, an exception handler can propagate the exception by reraising it, or it can return a value
 ;; that becomes the value of the try expression. One might instead design the language to allow the computation to
 ;; resume from the point at which the exception was raised. Modify the interpreter of this section to accomplish this by
 ;; running the body of the handler with the continuation from the point at which the raise was invoked.
