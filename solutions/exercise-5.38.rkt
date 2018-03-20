@@ -1,5 +1,7 @@
 #lang eopl
 
+;; Exercise 5.38 [★] Modify the defined language to add a division expression. Raise an exception on division by zero.
+
 ;; Grammar.
 
 (define the-lexical-spec
