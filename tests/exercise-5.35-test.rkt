@@ -50,14 +50,18 @@
 (check-equal? (run "null?(list(1))") (bool-val #f))
 
 (check-equal? (run "try 2
-                    catch (x) x") (num-val 2))
+                    catch (x) x")
+              (num-val 2))
 
 (check-equal? (run "try raise 3
-                    catch (x) x") (num-val 3))
+                    catch (x) x")
+              (num-val 3))
 
 (check-equal? (run "try -(3, raise 5)
-                    catch (x) 5") (num-val 5))
+                    catch (x) 5")
+              (num-val 5))
 
 (check-equal? (run "try try -(3, raise 5)
                         catch (x) raise 7
-                    catch (y) y") (num-val 7))
+                    catch (y) y")
+              (num-val 7))
