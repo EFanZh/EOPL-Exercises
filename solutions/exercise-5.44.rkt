@@ -108,23 +108,11 @@
       [bool-val (bool) bool]
       [else (expval-extractor-error 'bool v)])))
 
-(define expval->proc
-  (lambda (v)
-    (cases expval v
-      [proc-val (proc) proc]
-      [else (expval-extractor-error 'proc v)])))
-
 (define expval->list
   (lambda (v)
     (cases expval v
       [list-val (lst) lst]
       [else (expval-extractor-error 'list v)])))
-
-(define expval->cont
-  (lambda (v)
-    (cases expval v
-      [cont-val (cont) cont]
-      [else (expval-extractor-error 'cont v)])))
 
 (define-datatype continuation continuation?
   [end-cont]
