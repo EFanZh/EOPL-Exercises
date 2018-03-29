@@ -51,7 +51,8 @@
 (define the-store 'uninitialized)
 
 (define empty-store
-  (lambda () '()))
+  (lambda ()
+    '()))
 
 (define initialize-store!
   (lambda ()
@@ -89,7 +90,7 @@
 
 (define fresh-identifier
   (let ([sn 0])
-    (lambda (identifier)  
+    (lambda (identifier)
       (set! sn (+ sn 1))
       (string->symbol (string-append (symbol->string identifier) "%" (number->string sn))))))
 
@@ -374,7 +375,10 @@
                                                                     cont)]
       [set-exp (id exp) (value-of/k exp env (set-rhs-cont (apply-env env id) cont))]
       [spawn-exp (exp) (value-of/k exp env (spawn-cont cont))]
-      [yield-exp () (place-on-ready-queue! (lambda () (apply-cont cont (num-val 99)))) (run-next-thread)]
+      [yield-exp ()
+                 (place-on-ready-queue! (lambda ()
+                                          (apply-cont cont (num-val 99))))
+                 (run-next-thread)]
       [mutex-exp () (apply-cont cont (mutex-val (new-mutex)))]
       [wait-exp (exp) (value-of/k exp env (wait-cont cont))]
       [signal-exp (exp) (value-of/k exp env (signal-cont cont))]

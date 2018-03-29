@@ -8,7 +8,8 @@
 
 (define invert
   (lambda (lst)
-    (map (lambda (x) (list (cadr x) (car x)))
+    (map (lambda (x)
+           (list (cadr x) (car x)))
          lst)))
 
 (provide invert)

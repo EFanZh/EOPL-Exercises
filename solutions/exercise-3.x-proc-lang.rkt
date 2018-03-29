@@ -211,7 +211,9 @@
       [proc-exp (vars body) (proc-val (procedure vars body (filter-env env vars body)))]
       [traceproc-exp (vars body) (proc-val (trace-procedure vars body (filter-env env vars body)))]
       [call-exp (rator rands) (let ([proc (expval->proc (value-of rator env))]
-                                    [args (map (lambda (rand) (value-of rand env)) rands)])
+                                    [args (map (lambda (rand)
+                                                 (value-of rand env))
+                                               rands)])
                                 (apply-procedure proc args))])))
 
 ;; Interfaces.

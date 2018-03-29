@@ -150,7 +150,9 @@
                                             (cdr exps))))]
       [proc-exp (vars body) (proc-val (procedure vars body env))]
       [call-exp (rator rands) (let ([proc (expval->proc (value-of rator env))]
-                                    [args (map (lambda (rand) (value-of rand env)) rands)])
+                                    [args (map (lambda (rand)
+                                                 (value-of rand env))
+                                               rands)])
                                 (apply-procedure proc args))]
       [letrec-exp (p-names b-vars p-bodies letrec-body) (value-of letrec-body
                                                                   (extend-env-rec p-names b-vars p-bodies env))])))

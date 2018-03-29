@@ -118,7 +118,9 @@
                                  (if (expval->bool val1)
                                      (value-of exp2 env)
                                      (value-of exp3 env)))]
-      [let-exp (vars exps body) (let ([vals (map (lambda (e) (value-of e env)) exps)])
+      [let-exp (vars exps body) (let ([vals (map (lambda (e)
+                                                   (value-of e env))
+                                                 exps)])
                                   (value-of body
                                             (let loop ([env env]
                                                        [vars vars]
@@ -190,7 +192,9 @@
                                                 [(equal? rator "+") (num-val (+ (expval->num val1) (expval->num val2)))]
                                                 [(equal? rator "cons") (pair-val val1 val2)]
                                                 [else (eopl:error 'value-of-bool-exp "Unknown operator: ~s." rator)]))]
-      [n-ary-app-exp (rator exps) (let ([vals (map (lambda (e) (value-of e env)) exps)])
+      [n-ary-app-exp (rator exps) (let ([vals (map (lambda (e)
+                                                     (value-of e env))
+                                                   exps)])
                                     (cond [(equal? rator "list") (let loop ([vals vals])
                                                                    (if (null? vals)
                                                                        (emptylist-val)

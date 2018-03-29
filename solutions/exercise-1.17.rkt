@@ -11,7 +11,8 @@
 
 (define down
   (lambda (lst)
-    (map (lambda (x) (list x))
+    (map (lambda (x)
+           (list x))
          lst)))
 
 (provide down)

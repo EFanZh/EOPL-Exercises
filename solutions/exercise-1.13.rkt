@@ -11,7 +11,8 @@
 
 (define subst
   (lambda (new old slist)
-    (map (lambda (sexp) (subst-in-s-exp new old sexp))
+    (map (lambda (sexp)
+           (subst-in-s-exp new old sexp))
          slist)))
 
 (provide subst)

@@ -166,7 +166,9 @@
       [let-exp (vars exps body) (value-of body
                                           (let loop ([env env]
                                                      [vars vars]
-                                                     [vals (map (lambda (e) (value-of e env)) exps)])
+                                                     [vals (map (lambda (e)
+                                                                  (value-of e env))
+                                                                exps)])
                                             (if (null? vars)
                                                 env
                                                 (loop (extend-env (car vars) (car vals) env)
@@ -174,7 +176,9 @@
                                                       (cdr vals)))))]
       [proc-exp (vars body) (proc-val (procedure vars body))]
       [call-exp (rator rands) (let ([proc (expval->proc (value-of rator env))]
-                                    [args (map (lambda (rand) (value-of rand env)) rands)])
+                                    [args (map (lambda (rand)
+                                                 (value-of rand env))
+                                               rands)])
                                 (apply-procedure proc args env))])))
 
 ;; Interfaces.
