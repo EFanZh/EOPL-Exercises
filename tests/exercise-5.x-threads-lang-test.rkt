@@ -1,6 +1,5 @@
 #lang racket
 
-(require racket/set)
 (require rackunit)
 (require "../solutions/exercise-5.x-threads-lang.rkt")
 
