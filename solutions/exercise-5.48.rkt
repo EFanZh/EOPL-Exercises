@@ -352,8 +352,9 @@
                  [rator-cont (rand saved-env saved-cont) (value-of/k rand saved-env (rand-cont val saved-cont))]
                  [rand-cont (val1 saved-cont) (let ([proc (expval->proc val1)])
                                                 (apply-procedure proc val saved-cont))]
-                 [set-rhs-cont (loc cont) (begin (setref! loc val)
-                                                 (apply-cont cont (num-val 26)))]
+                 [set-rhs-cont (loc cont)
+                               (setref! loc val)
+                               (apply-cont cont (num-val 26))]
                  [spawn-cont (saved-cont) (let ([proc1 (expval->proc val)])
                                             (place-on-ready-queue! (proc-thread proc1 (num-val 28)))
                                             (apply-cont saved-cont (num-val 73)))]
