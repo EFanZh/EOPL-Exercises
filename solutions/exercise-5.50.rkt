@@ -164,17 +164,17 @@
     (a-mutex (newref #f) (newref '()))))
 
 (define wait-for-mutex
-  (lambda (m th)
-    (cases mutex m
+  (lambda ()
+    (cases mutex the-mutex
       [a-mutex (ref-to-closed? ref-to-wait-queue)
-               (cond [(deref ref-to-closed?) (setref! ref-to-wait-queue (enqueue (deref ref-to-wait-queue) th))
+               (cond [(deref ref-to-closed?) (setref! ref-to-wait-queue (enqueue (deref ref-to-wait-queue) the-thread))
                                              (run-next-thread)]
                      [else (setref! ref-to-closed? #t)
-                           (th)])])))
+                           (the-thread)])])))
 
 (define signal-mutex
-  (lambda (m th)
-    (cases mutex m
+  (lambda ()
+    (cases mutex the-mutex
       [a-mutex (ref-to-closed? ref-to-wait-queue) (let ([closed? (deref ref-to-closed?)]
                                                         [wait-queue (deref ref-to-wait-queue)])
                                                     (when closed?
@@ -184,7 +184,7 @@
                                                                    (lambda (first-waiting-th other-waiting-ths)
                                                                      (place-on-ready-queue! first-waiting-th)
                                                                      (setref! ref-to-wait-queue other-waiting-ths)))))
-                                                    (th))])))
+                                                    (the-thread))])))
 
 ;; Expressed values.
 
@@ -307,6 +307,8 @@
 (define the-proc 'uninitialized)
 (define the-arg 'uninitialized)
 (define the-unop 'uninitialized)
+(define the-mutex 'uninitialized)
+(define the-thread 'uninitialized)
 
 (define apply-unop
   (lambda ()
@@ -393,16 +395,20 @@
                                             (set! the-cont saved-cont)
                                             (set! the-val (num-val 73))
                                             (apply-cont))]
-                 [wait-cont (saved-cont) (wait-for-mutex (expval->mutex the-val)
-                                                         (lambda ()
-                                                           (set! the-cont saved-cont)
-                                                           (set! the-val (num-val 52))
-                                                           (apply-cont)))]
-                 [signal-cont (saved-cont) (signal-mutex (expval->mutex the-val)
-                                                         (lambda ()
-                                                           (set! the-cont saved-cont)
-                                                           (set! the-val (num-val 53))
-                                                           (apply-cont)))]
+                 [wait-cont (saved-cont)
+                            (set! the-mutex (expval->mutex the-val))
+                            (set! the-thread (lambda ()
+                                               (set! the-cont saved-cont)
+                                               (set! the-val (num-val 52))
+                                               (apply-cont)))
+                            (wait-for-mutex)]
+                 [signal-cont (saved-cont)
+                              (set! the-mutex (expval->mutex the-val))
+                              (set! the-thread (lambda ()
+                                                 (set! the-cont saved-cont)
+                                                 (set! the-val (num-val 53))
+                                                 (apply-cont)))
+                              (signal-mutex)]
                  [unop-arg-cont (unop1 cont)
                                 (set! the-unop unop1)
                                 (set! the-arg the-val)
