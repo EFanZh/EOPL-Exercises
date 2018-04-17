@@ -117,19 +117,42 @@
   (lambda (q f)
     (f (car q) (cdr q))))
 
+;; Thread.
+
+(define-datatype thread thread?
+  [a-thread [id integer?]
+            [proc procedure?]])
+
+(define thread->id
+  (lambda (th)
+    (cases thread th
+      [a-thread (id proc) id])))
+
+(define thread->proc
+  (lambda (th)
+    (cases thread th
+      [a-thread (id proc) proc])))
+
+(define new-thread
+  (lambda (proc1)
+    (a-thread (fresh-thread-id)
+              proc1)))
+
 ;; Scheduler.
 
 (define the-ready-queue 'uninitialized)
 (define the-final-answer 'uninitialized)
 (define the-max-time-slice 'uninitialized)
 (define the-time-remaining 'uninitialized)
+(define the-current-thread-id 'uninitialized)
 
 (define initialize-scheduler!
   (lambda (ticks)
     (set! the-ready-queue (empty-queue))
     (set! the-final-answer 'uninitialized)
     (set! the-max-time-slice ticks)
-    (set! the-time-remaining the-max-time-slice)))
+    (set! the-time-remaining the-max-time-slice)
+    (set! the-current-thread-id (fresh-thread-id))))
 
 (define place-on-ready-queue!
   (lambda (th)
@@ -155,7 +178,10 @@
                  (lambda (first-ready-thread other-ready-threads)
                    (set! the-ready-queue other-ready-threads)
                    (set! the-time-remaining the-max-time-slice)
-                   (first-ready-thread))))))
+                   (cases thread first-ready-thread
+                     [a-thread (id proc)
+                               (set! the-current-thread-id id)
+                               (proc)]))))))
 
 ;; Mutexes.
 
@@ -171,7 +197,8 @@
   (lambda (m th)
     (cases mutex m
       [a-mutex (ref-to-closed? ref-to-wait-queue)
-               (cond [(deref ref-to-closed?) (setref! ref-to-wait-queue (enqueue (deref ref-to-wait-queue) th))
+               (cond [(deref ref-to-closed?) (setref! ref-to-wait-queue (enqueue (deref ref-to-wait-queue)
+                                                                                 (a-thread the-current-thread-id th)))
                                              (run-next-thread)]
                      [else (setref! ref-to-closed? #t)
                            (th)])])))
@@ -330,8 +357,9 @@
 (define apply-cont
   (lambda (cont val)
     (if (time-expired?)
-        (begin (place-on-ready-queue! (lambda ()
-                                        (apply-cont cont val)))
+        (begin (place-on-ready-queue! (a-thread the-current-thread-id
+                                                (lambda ()
+                                                  (apply-cont cont val))))
                (run-next-thread))
         (begin (decrement-timer!)
                (cases continuation cont
@@ -354,10 +382,11 @@
                                (apply-cont cont (num-val 26))]
                  [spawn-cont (saved-cont) (let ([proc1 (expval->proc val)]
                                                 [thread-id (fresh-thread-id)])
-                                            (place-on-ready-queue! (lambda ()
-                                                                     (apply-procedure proc1
-                                                                                      (num-val thread-id)
-                                                                                      (end-subthread-cont))))
+                                            (place-on-ready-queue! (a-thread thread-id
+                                                                             (lambda ()
+                                                                               (apply-procedure proc1
+                                                                                                (num-val thread-id)
+                                                                                                (end-subthread-cont)))))
                                             (apply-cont saved-cont (num-val thread-id)))]
                  [wait-cont (saved-cont) (wait-for-mutex (expval->mutex val)
                                                          (lambda ()
@@ -391,8 +420,9 @@
       [set-exp (id exp) (value-of/k exp env (set-rhs-cont (apply-env env id) cont))]
       [spawn-exp (exp) (value-of/k exp env (spawn-cont cont))]
       [yield-exp ()
-                 (place-on-ready-queue! (lambda ()
-                                          (apply-cont cont (num-val 99))))
+                 (place-on-ready-queue! (a-thread the-current-thread-id
+                                                  (lambda ()
+                                                    (apply-cont cont (num-val 99)))))
                  (run-next-thread)]
       [mutex-exp () (apply-cont cont (mutex-val (new-mutex)))]
       [wait-exp (exp) (value-of/k exp env (wait-cont cont))]
