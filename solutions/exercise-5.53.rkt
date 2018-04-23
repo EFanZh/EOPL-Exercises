@@ -117,6 +117,19 @@
   (lambda (q f)
     (f (car q) (cdr q))))
 
+(define remove-first
+  (lambda (pred q)
+    (let loop ([lst '()]
+               [q q])
+      (if (null? q)
+          #f
+          (let ([head (car q)]
+                [tail (cdr q)])
+            (if (pred head)
+                (append (reverse lst) tail)
+                (loop (cons head lst)
+                      tail)))))))
+
 ;; Thread.
 
 (define-datatype thread thread?
@@ -140,6 +153,7 @@
 (define the-max-time-slice 'uninitialized)
 (define the-time-remaining 'uninitialized)
 (define the-current-thread-id 'uninitialized)
+(define the-list-of-threads 'uninitialized)
 
 (define initialize-scheduler!
   (lambda (ticks th)
@@ -147,7 +161,8 @@
     (set! the-final-answer 'uninitialized)
     (set! the-max-time-slice ticks)
     (set! the-time-remaining the-max-time-slice)
-    (set! the-current-thread-id (thread->id th))))
+    (set! the-current-thread-id (thread->id th))
+    (set! the-list-of-threads (list th))))
 
 (define place-on-ready-queue!
   (lambda (th)
@@ -186,7 +201,20 @@
                            (apply-procedure proc1
                                             (num-val thread-id)
                                             (end-subthread-cont))))])
+      (set! the-list-of-threads (cons th the-list-of-threads))
       th)))
+
+(define is-of-id
+  (lambda (id)
+    (lambda (th)
+      (= (thread->id th) id))))
+
+(define remove-thread
+  (lambda (id)
+    (let ([result (remove-first (is-of-id id) the-list-of-threads)])
+      (if result
+          (set! the-list-of-threads (remove-first (is-of-id id) the-list-of-threads))
+          (eopl:error 'remove-thread "failed to remove thread of id ~s" id)))))
 
 ;; Mutexes.
 
@@ -370,8 +398,11 @@
                (cases continuation cont
                  [end-main-thread-cont ()
                                        (set-final-answer! val)
+                                       (remove-thread the-current-thread-id)
                                        (run-next-thread)]
-                 [end-subthread-cont () (run-next-thread)]
+                 [end-subthread-cont ()
+                                     (remove-thread the-current-thread-id)
+                                     (run-next-thread)]
                  [diff1-cont (exp2 saved-env saved-cont) (value-of/k exp2 saved-env (diff2-cont val saved-cont))]
                  [diff2-cont (val1 saved-cont) (let ([n1 (expval->num val1)]
                                                      [n2 (expval->num val)])

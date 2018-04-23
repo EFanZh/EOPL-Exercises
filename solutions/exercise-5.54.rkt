@@ -198,11 +198,6 @@
                                (set! the-current-thread-id id)
                                (proc)]))))))
 
-(define is-of-id
-  (lambda (id)
-    (lambda (th)
-      (= (thread->id th) id))))
-
 (define new-thread
   (lambda (proc1)
     (let* ([thread-id (fresh-thread-id)]
@@ -233,6 +228,11 @@
                                                                                               (cons th (cdr threads)))]
                                       [else (loop (cons (car threads) processed)
                                                   (cdr threads))])))))
+
+(define is-of-id
+  (lambda (id)
+    (lambda (th)
+      (= (thread->id th) id))))
 
 (define remove-thread
   (lambda (id)
