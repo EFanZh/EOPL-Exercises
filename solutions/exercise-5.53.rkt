@@ -133,11 +133,6 @@
     (cases thread th
       [a-thread (id proc) proc])))
 
-(define new-thread
-  (lambda (proc1)
-    (a-thread (fresh-thread-id)
-              proc1)))
-
 ;; Scheduler.
 
 (define the-ready-queue 'uninitialized)
@@ -147,12 +142,12 @@
 (define the-current-thread-id 'uninitialized)
 
 (define initialize-scheduler!
-  (lambda (ticks)
+  (lambda (ticks th)
     (set! the-ready-queue (empty-queue))
     (set! the-final-answer 'uninitialized)
     (set! the-max-time-slice ticks)
     (set! the-time-remaining the-max-time-slice)
-    (set! the-current-thread-id (fresh-thread-id))))
+    (set! the-current-thread-id (thread->id th))))
 
 (define place-on-ready-queue!
   (lambda (th)
@@ -182,6 +177,16 @@
                      [a-thread (id proc)
                                (set! the-current-thread-id id)
                                (proc)]))))))
+
+(define new-thread
+  (lambda (proc1)
+    (let* ([thread-id (fresh-thread-id)]
+           [th (a-thread thread-id
+                         (lambda ()
+                           (apply-procedure proc1
+                                            (num-val thread-id)
+                                            (end-subthread-cont))))])
+      th)))
 
 ;; Mutexes.
 
@@ -380,14 +385,10 @@
                  [set-rhs-cont (loc cont)
                                (setref! loc val)
                                (apply-cont cont (num-val 26))]
-                 [spawn-cont (saved-cont) (let ([proc1 (expval->proc val)]
-                                                [thread-id (fresh-thread-id)])
-                                            (place-on-ready-queue! (a-thread thread-id
-                                                                             (lambda ()
-                                                                               (apply-procedure proc1
-                                                                                                (num-val thread-id)
-                                                                                                (end-subthread-cont)))))
-                                            (apply-cont saved-cont (num-val thread-id)))]
+                 [spawn-cont (saved-cont) (let* ([proc1 (expval->proc val)]
+                                                 [th (new-thread proc1)])
+                                            (place-on-ready-queue! th)
+                                            (apply-cont saved-cont (num-val (thread->id th))))]
                  [wait-cont (saved-cont) (wait-for-mutex (expval->mutex val)
                                                          (lambda ()
                                                            (apply-cont saved-cont (num-val 52))))]
@@ -432,9 +433,12 @@
 (define value-of-program
   (lambda (timeslice pgm)
     (initialize-store!)
-    (initialize-scheduler! timeslice)
     (cases program pgm
-      [a-program (exp1) (value-of/k exp1 (empty-env) (end-main-thread-cont))])))
+      [a-program (exp1) (let ([th (a-thread (fresh-thread-id)
+                                            (lambda ()
+                                              (value-of/k exp1 (empty-env) (end-main-thread-cont))))])
+                          (initialize-scheduler! timeslice th)
+                          ((thread->proc th)))])))
 
 ;; Interface.
 
