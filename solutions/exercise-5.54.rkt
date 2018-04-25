@@ -238,7 +238,7 @@
   (lambda (id)
     (let ([result (remove-first (is-of-id id) the-list-of-threads)])
       (if result
-          (set! the-list-of-threads (remove-first (is-of-id id) the-list-of-threads))
+          (set! the-list-of-threads result)
           (eopl:error 'remove-thread "failed to remove thread of id ~s" id)))))
 
 (define kill-thread
