@@ -256,7 +256,7 @@
 
 (define apply-env
   (lambda (env search-sym)
-    (if (null? env) 
+    (if (null? env)
         (eopl:error 'apply-env "No binding for ~s" search-sym)
         (let* ((binding (car env))
                (saved-env (cdr env)))
@@ -446,7 +446,7 @@
                (set! the-exp (call-exp (proc-exp var body) exp1))
                (value-of/k)]
       [begin-exp (exp exps)
-                 (set! the-exp 
+                 (set! the-exp
                        (if (null? exps)
                            exp
                            (call-exp (proc-exp (fresh-identifier 'dummy) (begin-exp (car exps) (cdr exps))) exp)))

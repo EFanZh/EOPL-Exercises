@@ -14,18 +14,18 @@
                     (check-bin-tree-equal? (lson bin-tree-1) (lson bin-tree-2))
                     (check-bin-tree-equal? (rson bin-tree-1) (rson bin-tree-2))))))
 
-(check-bin-tree-equal?  (mark-leaves-with-red-depth (interior-node 'red
-                                                                   (interior-node 'bar
-                                                                                  (leaf 26)
-                                                                                  (leaf 12))
-                                                                   (interior-node 'red
-                                                                                  (leaf 11)
-                                                                                  (interior-node 'quux
-                                                                                                 (leaf 117)
-                                                                                                 (leaf 14)))))
-                        (interior-node 'red
-                                       (interior-node 'bar (leaf 1) (leaf 1))
-                                       (interior-node 'red (leaf 2) (interior-node 'quux (leaf 2) (leaf 2)))))
+(check-bin-tree-equal? (mark-leaves-with-red-depth (interior-node 'red
+                                                                  (interior-node 'bar
+                                                                                 (leaf 26)
+                                                                                 (leaf 12))
+                                                                  (interior-node 'red
+                                                                                 (leaf 11)
+                                                                                 (interior-node 'quux
+                                                                                                (leaf 117)
+                                                                                                (leaf 14)))))
+                       (interior-node 'red
+                                      (interior-node 'bar (leaf 1) (leaf 1))
+                                      (interior-node 'red (leaf 2) (interior-node 'quux (leaf 2) (leaf 2)))))
 
 (check-bin-tree-equal? (mark-leaves-with-red-depth (leaf 0)) (leaf 0))
 (check-bin-tree-equal? (mark-leaves-with-red-depth (leaf 1)) (leaf 0))

@@ -26,9 +26,9 @@
 (define extended-env-record
   (lambda (sym val old-env)
     (cons (list sym val) old-env)))
-  
+
 (define empty-env-record? null?)
-  
+
 (define environment?
   (lambda (x)
     (or (empty-env-record? x)
@@ -49,15 +49,15 @@
   (lambda (r)
     (cdr r)))
 
-(define init-env 
+(define init-env
   (lambda ()
     (empty-env)))
 
 (define empty-env
   (lambda ()
     (empty-env-record)))
-  
-(define empty-env? 
+
+(define empty-env?
   (lambda (x)
     (empty-env-record? x)))
 
@@ -96,11 +96,11 @@
 
 (define scan&parse
   (sllgen:make-string-parser the-lexical-spec the-grammar))
-  
+
 (define just-scan
   (sllgen:make-string-scanner the-lexical-spec the-grammar))
-  
-(define value-of-program 
+
+(define value-of-program
   (lambda (pgm)
     (cases program pgm
       [a-program (exp1) (value-of exp1 (init-env))])))

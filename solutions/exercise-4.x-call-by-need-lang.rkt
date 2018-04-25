@@ -161,7 +161,7 @@
       (set! the-store (append the-store (list val)))
       next-ref)))
 
-(define deref 
+(define deref
   (lambda (ref)
     (list-ref the-store ref)))
 
@@ -207,7 +207,7 @@
                          (if (expval? w)
                              w
                              (let ([v1 (value-of-thunk w)])
-                               (begin (setref! ref1 v1)   
+                               (begin (setref! ref1 v1)
                                       v1)))))]
       [diff-exp (exp1 exp2) (let ([val1 (expval->num (value-of exp1 env))]
                                   [val2 (expval->num (value-of exp2 env))])

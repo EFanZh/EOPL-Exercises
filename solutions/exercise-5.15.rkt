@@ -14,7 +14,7 @@
     [identifier (letter (arbno (or letter digit "_" "-" "?"))) symbol]
     [number (digit (arbno digit)) number]
     [number ("-" digit (arbno digit)) number]))
-  
+
 (define the-grammar
   '([program (expression) a-program]
     [expression (number) const-exp]
@@ -134,7 +134,7 @@
                                           val
                                           (apply-env saved-env search-sym))]
       [extend-env-rec (p-name b-var p-body saved-env) (if (eqv? search-sym p-name)
-                                                          (proc-val (procedure b-var p-body env))          
+                                                          (proc-val (procedure b-var p-body env))
                                                           (apply-env saved-env search-sym))])))
 
 (define value-of/k

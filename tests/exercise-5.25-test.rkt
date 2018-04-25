@@ -28,7 +28,7 @@
                     in (f 2 3 5)")
               (num-val 5))
 
-(check-equal? (run "letrec f() =  6
+(check-equal? (run "letrec f() = 6
                     in (f)")
               (num-val 6))
 

@@ -212,7 +212,7 @@
       (set! the-store (append the-store (list val)))
       next-ref)))
 
-(define deref 
+(define deref
   (lambda (ref)
     (list-ref the-store ref)))
 

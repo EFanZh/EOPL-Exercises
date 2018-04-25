@@ -8,7 +8,7 @@
     (if (eqv? (car n) 'one)
         1
         (- (interpret (cadr n))
-           (interpret (caddr n)))))) 
+           (interpret (caddr n))))))
 
 (define-binary-check (check-integer actual expected)
   (= (interpret actual) expected))

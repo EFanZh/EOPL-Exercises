@@ -255,7 +255,7 @@
 
 (define apply-env
   (lambda (env search-sym)
-    (if (null? env) 
+    (if (null? env)
         (eopl:error 'apply-env "No binding for ~s" search-sym)
         (let* ((binding (car env))
                (saved-env (cdr env)))
@@ -300,7 +300,7 @@
                      (apply-cont cont (car lst)))]
       [cdr-unop () (let ([lst (expval->list arg)])
                      (apply-cont cont (list-val (cdr lst))))]
-      [null?-unop () (apply-cont cont  (bool-val (null? (expval->list arg))))]
+      [null?-unop () (apply-cont cont (bool-val (null? (expval->list arg))))]
       [print-unop () (begin (eopl:printf "~a~%" (expval->num arg))
                             (apply-cont cont (num-val 1)))])))
 
