@@ -152,8 +152,8 @@
         (cdr cont)))
 
 (define (try-cont var handler-exp env cont)
-  (let [(handler (lambda (val)
-                   (value-of/k handler-exp (extend-env var val env) cont)))]
+  (let ([handler (lambda (val)
+                   (value-of/k handler-exp (extend-env var val env) cont))])
     (cons (lambda (val)
             (apply-cont (cons (car cont) handler) val))
           handler)))
