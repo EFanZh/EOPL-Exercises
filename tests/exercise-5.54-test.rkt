@@ -92,9 +92,9 @@
                                                                             (noisy cdr(l))
                                                                       end
                                               in begin spawn(proc (d)
-                                                               (noisy [1,2,3,4,5]));
+                                                               (noisy [1, 2, 3, 4, 5]));
                                                        spawn(proc (d)
-                                                               (noisy [6,7,8,9,10]));
+                                                               (noisy [6, 7, 8, 9, 10]));
                                                        print(100);
                                                        33
                                                  end")))]

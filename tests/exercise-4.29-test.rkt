@@ -10,7 +10,7 @@
                     in begin arrayset(a, 1, 0);
                              (p a);
                              (p a);
-                             arrayref(a,1)
+                             arrayref(a, 1)
                        end")
               (num-val 2))
 
