@@ -1,4 +1,4 @@
-#lang racket
+#lang eopl
 
 ;; Exercise 6.6 [★] How many different evaluation orders are possible for the procedure calls in
 ;; (lambda (x y) (+ (f (g x)) (h (j y))))? For each evaluation order, write a CPS expression that calls the procedures
