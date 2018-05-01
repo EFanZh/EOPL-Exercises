@@ -1,5 +1,9 @@
 #lang racket
 
+;; Exercise 6.6 [★] How many different evaluation orders are possible for the procedure calls in
+;; (lambda (x y) (+ (f (g x)) (h (j y))))? For each evaluation order, write a CPS expression that calls the procedures
+;; in that order.
+
 (define-syntax define-function
   (syntax-rules ()
     [(_ (f args ...)) (define (f args ...)
