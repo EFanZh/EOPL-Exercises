@@ -53,8 +53,6 @@
 
 (sllgen:make-define-datatypes cps-out-lexical-spec cps-out-grammar)
 
-(define cps-out-scan&parse (sllgen:make-string-parser cps-out-lexical-spec cps-out-grammar))
-
 ;; Transformer.
 
 (define list-set
