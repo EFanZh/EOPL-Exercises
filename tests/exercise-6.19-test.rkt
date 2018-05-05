@@ -1,0 +1,31 @@
+#lang racket/base
+
+(require rackunit)
+(require "../solutions/exercise-6.19.rkt")
+
+(define (is-tail-form? s)
+  (tail-form? (scan&parse s)))
+
+(check-true (is-tail-form? "3"))
+(check-true (is-tail-form? "-(3, 4)"))
+(check-true (is-tail-form? "-(-(3, 4), 4)"))
+(check-true (is-tail-form? "-(3, -(3, 4))"))
+(check-true (is-tail-form? "zero?(3)"))
+(check-true (is-tail-form? "if x then y else z"))
+(check-true (is-tail-form? "if x then (y z) else w"))
+(check-true (is-tail-form? "x"))
+(check-true (is-tail-form? "let x = y in z"))
+(check-true (is-tail-form? "let x = y in (z w)"))
+(check-true (is-tail-form? "letrec x (y) = z in w"))
+(check-true (is-tail-form? "letrec x (y) = (y z) in w"))
+(check-true (is-tail-form? "proc (x) y"))
+(check-true (is-tail-form? "(x y z)"))
+
+(check-false (is-tail-form? "-((x y), z)"))
+(check-false (is-tail-form? "zero?((x y))"))
+(check-false (is-tail-form? "if (x y) then z else w"))
+(check-false (is-tail-form? "if x then ((y z) w) else u"))
+(check-false (is-tail-form? "let x = (y z) in w"))
+(check-false (is-tail-form? "letrec x (y) = ((y z) w) in u"))
+(check-false (is-tail-form? "proc (x) ((y z) w)"))
+(check-false (is-tail-form? "((y z) w)"))
