@@ -73,10 +73,8 @@
     (cases expression exp
       [const-exp (num) #t]
       [var-exp (var) #t]
-      [diff-exp (exp1 exp2) (and (inp-exp-simple? exp1)
-                                 (inp-exp-simple? exp2))]
-      [zero?-exp (exp1)
-                 (inp-exp-simple? exp1)]
+      [diff-exp (exp1 exp2) (and (inp-exp-simple? exp1) (inp-exp-simple? exp2))]
+      [zero?-exp (exp1) (inp-exp-simple? exp1)]
       [proc-exp (ids exp) #t]
       [sum-exp (exps) (all-simple? exps)]
       [else #f])))
