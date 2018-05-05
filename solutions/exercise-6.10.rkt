@@ -14,7 +14,7 @@
   (lambda (loi cont)
     (if (null? loi)
         cont
-        (list-sum (cdr loi)
-                  (+ cont (car loi))))))
+        (list-sum/k (cdr loi)
+                    (+ cont (car loi))))))
 
 (provide list-sum list-sum/k)
