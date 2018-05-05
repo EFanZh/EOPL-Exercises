@@ -1,4 +1,4 @@
-#lang racket
+#lang racket/base
 
 (require rackunit)
 (require "../solutions/exercise-4.37.rkt")

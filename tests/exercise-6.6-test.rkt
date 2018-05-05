@@ -1,10 +1,13 @@
-#lang racket
+#lang racket/base
 
 (require rackunit)
 (require "../solutions/exercise-6.6.rkt")
 
 (define (run-solution solution)
-  (solution 'x 'y identity))
+  (solution 'x
+            'y
+            (λ (x)
+              x)))
 
 (define expected-result '(+ (f (g x)) (h (j y))))
 
