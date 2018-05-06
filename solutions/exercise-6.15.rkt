@@ -68,6 +68,13 @@
       (set! sn (+ sn 1))
       (string->symbol (string-append (symbol->string identifier) "%" (number->string sn))))))
 
+(define all-simple?
+  (lambda (exps)
+    (if (null? exps)
+        #t
+        (and (inp-exp-simple? (car exps))
+             (all-simple? (cdr exps))))))
+
 (define inp-exp-simple?
   (lambda (exp)
     (cases expression exp
@@ -78,13 +85,6 @@
       [proc-exp (ids exp) #t]
       [sum-exp (exps) (all-simple? exps)]
       [else #f])))
-
-(define all-simple?
-  (lambda (exps)
-    (if (null? exps)
-        #t
-        (and (inp-exp-simple? (car exps))
-             (all-simple? (cdr exps))))))
 
 (define make-send-to-cont
   (lambda (cont bexp)
