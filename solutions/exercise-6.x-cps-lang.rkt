@@ -136,7 +136,7 @@
 
 (define report-invalid-exp-to-cps-of-simple-exp
   (lambda (exp)
-    (eopl:error 'cps-simple-of-exp "non-simple expression to cps-of-simple-exp: ~s" exp)))
+    (eopl:error 'cps-of-simple-exp "non-simple expression to cps-of-simple-exp: ~s" exp)))
 
 (define cps-of-simple-exp
   (lambda (exp)
