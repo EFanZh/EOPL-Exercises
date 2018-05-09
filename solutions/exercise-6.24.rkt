@@ -1,5 +1,8 @@
 #lang eopl
 
+;; Exercise 6.24 [★★] Add lists to the language (exercise 3.10). Remember that the arguments to a list are not in tail
+;; position.
+
 ;; CPS-IN grammar.
 
 (define the-lexical-spec
