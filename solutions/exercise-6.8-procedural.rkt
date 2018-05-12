@@ -127,7 +127,7 @@
       (let ([n1 (expval->num val1)]
             [n2 (expval->num val)])
         (apply-cont cont (num-val (- n1 n2)))))))
-  
+
 (define unop-arg-cont
   (lambda (unop cont)
     (lambda (val)
