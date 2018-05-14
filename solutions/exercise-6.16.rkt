@@ -207,7 +207,7 @@
 
 (define expval-extractor-error
   (lambda (variant value)
-    [eopl:error 'expval-extractors "Looking for a ~s, found ~s" variant value]))
+    (eopl:error 'expval-extractors "Looking for a ~s, found ~s" variant value)))
 
 (define expval->num
   (lambda (v)
