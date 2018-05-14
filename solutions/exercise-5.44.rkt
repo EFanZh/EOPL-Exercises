@@ -40,7 +40,7 @@
     [expression ("callcc" "(" expression ")") callcc-exp]
     [unary-op ("null?") null?-unop]
     [unary-op ("car") car-unop]
-    [unary-op ("cdr" ) cdr-unop]
+    [unary-op ("cdr") cdr-unop]
     [unary-op ("zero?") zero?-unop]))
 
 (sllgen:make-define-datatypes the-lexical-spec the-grammar)
