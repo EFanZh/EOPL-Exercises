@@ -3,9 +3,9 @@
 ;; Exercise 2.22 [★] Using define-datatype, implement the stack data type of exercise 2.4.
 
 (define-datatype stack-type stack?
-  (empty-stack)
-  (push [saved-stack stack?]
-        [val always?]))
+  [empty-stack]
+  [push [saved-stack stack?]
+        [val always?]])
 
 (define pop
   (lambda (stack)

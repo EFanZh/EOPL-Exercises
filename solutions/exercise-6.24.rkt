@@ -211,10 +211,10 @@
              [env environment?]])
 
 (define-datatype expval expval?
-  [num-val (value number?)]
-  [bool-val (boolean boolean?)]
-  [proc-val (proc proc?)]
-  [list-val (lst (list-of expval?))])
+  [num-val [value number?]]
+  [bool-val [boolean boolean?]]
+  [proc-val [proc proc?]]
+  [list-val [lst (list-of expval?)]])
 
 (define expval-extractor-error
   (lambda (variant value)

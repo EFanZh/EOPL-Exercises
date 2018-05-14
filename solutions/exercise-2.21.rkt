@@ -4,10 +4,10 @@
 ;; has-binding? of exercise 2.9.
 
 (define-datatype env-type env?
-  (empty-env)
-  (extend-env [var symbol?]
+  [empty-env]
+  [extend-env [var symbol?]
               [val always?]
-              [env env?]))
+              [env env?]])
 
 (define apply-env
   (lambda (env search-var)
