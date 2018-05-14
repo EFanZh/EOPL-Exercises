@@ -124,10 +124,10 @@
                                                 (lambda (result2)
                                                   (success (cps-diff-exp exp1 result2)))
                                                 failure)))]
-        [cps-zero?-exp (exp1)  (loop exp1
-                                     (lambda (result1)
-                                       (success (cps-zero?-exp result1)))
-                                     failure)]
+        [cps-zero?-exp (exp1) (loop exp1
+                                    (lambda (result1)
+                                      (success (cps-zero?-exp result1)))
+                                    failure)]
         [cps-sum-exp (exps) (replace-one (lambda (exp)
                                            (loop exp var val)
                                            (lambda (result)
