@@ -44,7 +44,7 @@
 
 (check-equal? (get-output "var f, x;
                            {
-                             f = proc(x, y) *(x, y);
+                             f = proc (x, y) *(x, y);
                              x = 3;
                              print (f 4 x)
                            }")

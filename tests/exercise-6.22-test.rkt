@@ -42,12 +42,12 @@
 (check-equal? (run "let x = 3 in let y = 4 in -(x, y)") (num-val -1))
 (check-equal? (run "let x = 3 in let x = 4 in x") (num-val 4))
 (check-equal? (run "let x = 3 in let x = -(x, 1) in x") (num-val 2))
-(check-equal? (run "(proc(x) -(x, 1) 30)") (num-val 29))
+(check-equal? (run "(proc (x) -(x, 1) 30)") (num-val 29))
 (check-equal? (run "let f = proc (x) -(x, 1) in (f 30)") (num-val 29))
-(check-equal? (run "(proc(f)(f 30) proc(x)-(x, 1))") (num-val 29))
+(check-equal? (run "(proc (f) (f 30) proc (x) -(x, 1))") (num-val 29))
 (check-equal? (run "((proc (x) proc (y) -(x, y) 5) 6)") (num-val -1))
 (check-equal? (run "(proc (x y) -(x, y) 5 6)") (num-val -1))
-(check-equal? (run "let f = proc(x y) -(x, y) in (f -(10, 5) 6)") (num-val -1))
+(check-equal? (run "let f = proc (x y) -(x, y) in (f -(10, 5) 6)") (num-val -1))
 
 (check-equal? (run "let fix = proc (f)
                                 let d = proc (x)
@@ -56,7 +56,7 @@
                                 in proc (n)
                                      ((f (d d)) n)
                     in let t4m = proc (f)
-                                   proc(x)
+                                   proc (x)
                                      if zero?(x)
                                      then 0
                                      else -((f -(x, 1)), -4)
@@ -73,14 +73,14 @@
                          (f (f x)))")
               (num-val 9))
 
-(check-equal? (run "let twice = proc(f x k)
+(check-equal? (run "let twice = proc (f x k)
                                   (f x
                                      proc (z)
                                        (f z k))
                     in (twice proc (x k)
                                 (k -(x, 1))
                               11
-                              proc(z)
+                              proc (z)
                                 z)")
               (num-val 9))
 
