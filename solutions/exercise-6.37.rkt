@@ -138,12 +138,7 @@
                                  (loop2 (cdr proc-names2)
                                         (cdr idss2)
                                         (cdr proc-bodies2)))))
-          (let ([var (fresh-identifier 'var)])
-            (cps-newrefk-exp (cps-const-exp 678)
-                             (cps-proc-exp (list var)
-                                           (cps-let-exp (car proc-names1)
-                                                        (cps-var-exp var)
-                                                        (loop1 (cdr proc-names1))))))))))
+          (cps-newrefk-exp (cps-const-exp 678) (cps-proc-exp (list (car proc-names1)) (loop1 (cdr proc-names1))))))))
 
 (define cps-of-call-exp
   (lambda (rator rands k-exp)
