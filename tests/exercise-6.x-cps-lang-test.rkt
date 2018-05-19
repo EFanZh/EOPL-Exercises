@@ -144,3 +144,11 @@
                                          else -((fib -(n, 1)), -(0, (fib -(n, 2))))
                     in +((fib 1), 12, (fib 5))")
               (num-val 21))
+
+; A test case that reproduces a error in the original interpreter.
+;
+; (check-equal? (run "let x = 4
+;                     in -(let x = 7
+;                          in x,
+;                          x)")
+;               (num-val 3))
