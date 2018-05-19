@@ -198,3 +198,20 @@
                         set x = 6)
                      4)")
               (num-val 6))
+
+(check-equal? (run "letrec f (x) = x
+                    in (proc (dummy)
+                          f
+                        set f = 5)")
+              (num-val 5))
+
+(check-equal? (run "let a = 1
+                    in let f = proc (x)
+                                 (proc (dummy)
+                                    (proc (dummy)
+                                       x
+                                     set a = 4)
+                                  set x = -(x, 3))
+                       in let b = (f 5)
+                          in -(a, b)")
+              (num-val 2))
