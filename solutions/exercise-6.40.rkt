@@ -156,7 +156,7 @@
 
 (define cps-of-try-exp
   (lambda (exp1 var exp2 k-exp h-exp)
-    ; Could this implementation cause program size to grow exponentially.
+    ; Could this implementation cause program size to grow exponentially?
     (cps-of-exp exp1 k-exp (cps-proc-exp (list var) (cps-of-exp exp2 k-exp h-exp)))))
 
 (define cps-of-raise-exp
