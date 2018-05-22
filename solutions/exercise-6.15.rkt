@@ -228,7 +228,7 @@
       [proc-val (proc) proc]
       [else (expval-extractor-error 'proc v)])))
 
-;; Data structure - environment.
+;; Data structures - environment.
 
 (define empty-env
   (lambda ()

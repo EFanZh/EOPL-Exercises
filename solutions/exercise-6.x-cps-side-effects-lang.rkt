@@ -254,7 +254,7 @@
       [ref-val (ref) ref]
       [else (expval-extractor-error 'reference v)])))
 
-;; Data structure - environment.
+;; Data structures - environment.
 
 (define empty-env
   (lambda ()
@@ -294,12 +294,12 @@
                               (proc-val (procedure (list-ref bvars pos) (list-ref bodies pos) env)))])
                 (apply-env saved-env search-sym)))))))
 
-;; Data structure - continuation.
+;; Data structures - continuation.
 
 (define-datatype continuation continuation?
   [end-cont])
 
-;; Data structure - store.
+;; Data structures - store.
 
 (define reference?
   (lambda (v)
