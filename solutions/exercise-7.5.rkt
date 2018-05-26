@@ -213,7 +213,7 @@
                                                                                       rands)
                                                                             result-type)]
                                   [else (report-rator-not-a-proc-type rator-type rator)]))]
-      (letrec-exp (p-result-types p-names b-vars b-var-types p-bodies letrec-body)
+      [letrec-exp (p-result-types p-names b-vars b-var-types p-bodies letrec-body)
                   (let ([tenv-for-letrec-body (extend-tenv* p-names
                                                             (map (lambda (b-var-type p-result-type)
                                                                    (proc-type b-var-type p-result-type))
@@ -226,7 +226,7 @@
                                              b-var-types
                                              p-bodies)])
                       (for-each check-equal-type! p-body-types p-result-types p-bodies)
-                      (type-of letrec-body tenv-for-letrec-body)))))))
+                      (type-of letrec-body tenv-for-letrec-body)))])))
 
 (define type-of-program
   (lambda (pgm)

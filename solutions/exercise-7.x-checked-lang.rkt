@@ -164,11 +164,11 @@
                                  [proc-type (arg-type result-type) (begin (check-equal-type! arg-type rand-type rand)
                                                                           result-type)]
                                  [else (report-rator-not-a-proc-type rator-type rator)]))]
-      (letrec-exp (p-result-type p-name b-var b-var-type p-body letrec-body)
+      [letrec-exp (p-result-type p-name b-var b-var-type p-body letrec-body)
                   (let ([tenv-for-letrec-body (extend-tenv p-name (proc-type b-var-type p-result-type) tenv)])
                     (let ([p-body-type (type-of p-body (extend-tenv b-var b-var-type tenv-for-letrec-body))])
                       (check-equal-type! p-body-type p-result-type p-body)
-                      (type-of letrec-body tenv-for-letrec-body)))))))
+                      (type-of letrec-body tenv-for-letrec-body)))])))
 
 (define type-of-program
   (lambda (pgm)
