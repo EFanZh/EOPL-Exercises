@@ -204,3 +204,7 @@
                                                     else ((times x) (fact -(x, 1)))
                          in (fact 4)")
               'int)
+
+(check-exn exn:fail?
+           (λ ()
+             (check "if 1 then -(zero?(1), 4) else 2")))
