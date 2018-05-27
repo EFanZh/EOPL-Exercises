@@ -25,9 +25,9 @@
 ;;     --------------------------------------------------
 ;;      (type-of (pair-exp e1 e2) tenv) = pairof t1 * t2
 ;;
-;;              (type-of epair tenv) = (pairof t1 t2)
-;;          (type-of ebody [var1=t1][var2=t2]tenv) = tbody
-;;     --------------------------------------------------------
+;;                        (type-of epair tenv) = (pairof t1 t2)
+;;      (type-of ebody [var1=t1][var2=t2]tenv) = tbody
+;;     ---------------------------------------------------------
 ;;      (type-of (unpair-exp var1 var2 e1 ebody) tenv) = tbody
 ;;
 ;; Extend CHECKED to implement these rules. In type-to-external-form, produce the list (pairof t1 t2) for a pair type.

@@ -277,3 +277,11 @@
                                                      else (even? -(x, 1))
                       in (even? 7)")
               'bool)
+
+(check-exn exn:fail?
+           (λ ()
+             (check "(1 2)")))
+
+(check-exn exn:fail?
+           (λ ()
+             (run "(1 2)")))

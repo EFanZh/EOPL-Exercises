@@ -205,8 +205,25 @@
                          in (fact 4)")
               'int)
 
+(check-exn exn:fail?
+           (λ ()
+             (check "(1 2)")))
+
+(check-exn exn:fail?
+           (λ ()
+             (run "(1 2)")))
+
 (check-equal? (check "newpair(zero?(4), 3)") '(pairof bool * int))
 (check-equal? (check "unpair a b = newpair(zero?(4), 3) in a") 'bool)
 (check-equal? (check "unpair a b = newpair(zero?(4), 3) in b") 'int)
+
+(check-exn exn:fail?
+           (λ ()
+             (check "unpair a b = 1 in a")))
+
 (check-equal? (run "unpair a b = newpair(7, 3) in a") (num-val 7))
 (check-equal? (run "unpair a b = newpair(7, 3) in b") (num-val 3))
+
+(check-exn exn:fail?
+           (λ ()
+             (run "unpair a b = 1 in a")))

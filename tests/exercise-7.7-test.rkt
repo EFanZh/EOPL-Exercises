@@ -207,4 +207,12 @@
 
 (check-exn exn:fail?
            (λ ()
+             (check "(1 2)")))
+
+(check-exn exn:fail?
+           (λ ()
+             (run "(1 2)")))
+
+(check-exn exn:fail?
+           (λ ()
              (check "if 1 then -(zero?(1), 4) else 2")))

@@ -204,3 +204,11 @@
                                                     else ((times x) (fact -(x, 1)))
                          in (fact 4)")
               'int)
+
+(check-exn exn:fail?
+           (λ ()
+             (check "(1 2)")))
+
+(check-exn exn:fail?
+           (λ ()
+             (run "(1 2)")))

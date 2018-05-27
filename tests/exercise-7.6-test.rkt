@@ -205,6 +205,14 @@
                          in (fact 4)")
               'int)
 
+(check-exn exn:fail?
+           (λ ()
+             (check "(1 2)")))
+
+(check-exn exn:fail?
+           (λ ()
+             (run "(1 2)")))
+
 (check-equal? (check "let x = 4
                       in (proc (dummy : int)
                             x
