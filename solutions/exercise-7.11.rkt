@@ -144,7 +144,7 @@
       (set! the-store (append the-store (list val)))
       next-ref)))
 
-(define deref 
+(define deref
   (lambda (ref)
     (list-ref the-store ref)))
 
@@ -152,7 +152,7 @@
   (lambda (ref the-store)
     (eopl:error 'setref "illegal reference ~s in store ~s" ref the-store)))
 
-(define setref!                       
+(define setref!
   (lambda (ref val)
     (set! the-store (letrec ([setref-inner (lambda (store1 ref1)
                                              (cond [(null? store1) (report-invalid-reference ref the-store)]
