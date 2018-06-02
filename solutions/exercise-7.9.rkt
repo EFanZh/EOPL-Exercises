@@ -4,7 +4,6 @@
 ;; type listof t if and only if it is a list and all of its elements are of type t. Extend the language with the
 ;; productions
 ;;
-;;
 ;;     Type       ::= listof Type
 ;;                    ┌────────────────┐
 ;;                    │ list-type (ty) │
