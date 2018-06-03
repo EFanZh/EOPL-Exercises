@@ -105,7 +105,6 @@
 
 (check-equal? (check "if zero?(1) then 3 else 4") 'int)
 (check-equal? (check "if zero?(0) then 3 else 4") 'int)
-
 (check-equal? (check "if zero?(-(11, 12)) then 3 else 4") 'int)
 (check-equal? (check "if zero?(-(11, 11)) then 3 else 4") 'int)
 (check-equal? (check "if zero?(1) then -(22, 1) else -(22, 2)") 'int)
@@ -129,12 +128,10 @@
 
 (check-exn exn:fail?
            (λ ()
-             (check "(proc(x : (int -> int)) -(x, 1) 30)")))
+             (check "(proc (x : (int -> int)) -(x, 1) 30)")))
 
 (check-equal? (check "let f = proc (x : int) -(x, 1) in (f 30)") 'int)
 (check-equal? (check "(proc (f : (int -> int)) (f 30) proc (x : int) -(x, 1))") 'int)
-
-
 (check-equal? (check "((proc (x : int) proc (y : int) -(x, y) 5) 6)") 'int)
 (check-equal? (check "let f = proc (x : int) proc (y : int) -(x, y) in ((f -(10, 5)) 3)") 'int)
 (check-equal? (check "letrec int f(x : int) = -(x, 1) in (f 33)") 'int)
@@ -173,8 +170,7 @@
            (λ ()
              (check "proc (x : int) proc (f : (int -> (int -> bool))) (f zero?(x))")))
 
-(check-equal? (check "((proc(x : int) proc (y : int) -(x, y) 4) 3)") 'int)
-
+(check-equal? (check "((proc (x : int) proc (y : int) -(x, y) 4) 3)") 'int)
 (check-equal? (check "(proc (x : int) -(x, 1) 4)") 'int)
 
 (check-equal? (check "letrec int f(x : int) = -(x, 1)
