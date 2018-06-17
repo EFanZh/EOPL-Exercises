@@ -234,10 +234,12 @@
                                   (report-no-occurrence-violation ty2 ty1 exp))]
             [(and (proc-type? ty1) (proc-type? ty2)) (let ([subst (unifier (proc-type->arg-type ty1)
                                                                            (proc-type->arg-type ty2)
-                                                                           subst exp)])
+                                                                           subst
+                                                                           exp)])
                                                        (let ([subst (unifier (proc-type->result-type ty1)
                                                                              (proc-type->result-type ty2)
-                                                                             subst exp)])
+                                                                             subst
+                                                                             exp)])
                                                          subst))]
             [else (report-unification-failure ty1 ty2 exp)]))))
 
