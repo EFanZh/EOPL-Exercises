@@ -278,12 +278,12 @@
       [diff-exp (exp1 exp2) (cases answer (type-of exp1 tenv subst)
                               [an-answer (type1 subst1) (let ([subst1 (unifier type1 (int-type) subst1 exp1)])
                                                           (cases answer (type-of exp2 tenv subst1)
-                                                            (an-answer (type2 subst2) (let ([subst2 (unifier type2
+                                                            [an-answer (type2 subst2) (let ([subst2 (unifier type2
                                                                                                              (int-type)
                                                                                                              subst2
                                                                                                              exp2)])
                                                                                         (an-answer (int-type)
-                                                                                                   subst2)))))])]
+                                                                                                   subst2))]))])]
       [if-exp (exp1 exp2 exp3)
               (cases answer (type-of exp1 tenv subst)
                 [an-answer (ty1 subst) (let ([subst (unifier ty1 (bool-type) subst exp1)])
