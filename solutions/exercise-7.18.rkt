@@ -157,15 +157,6 @@
   (lambda ()
     '()))
 
-(define apply-one-subst
-  (lambda (ty0 tvar ty1)
-    (cases type ty0
-      [int-type () (int-type)]
-      [bool-type () (bool-type)]
-      [proc-type (arg-type result-type) (proc-type (apply-one-subst arg-type tvar ty1)
-                                                   (apply-one-subst result-type tvar ty1))]
-      [tvar-type (sn) (if (equal? ty0 tvar) ty1 ty0)])))
-
 (define extend-subst
   (lambda (subst tvar ty)
     (cons (cons tvar ty) subst)))
