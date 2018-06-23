@@ -84,7 +84,7 @@
   (lambda (ty)
     (cases type ty
       [list-type (ty1) ty1]
-      [else (eopl:error 'proc-type->result-types "Not a list type: ~s" ty)])))
+      [else (eopl:error 'list-type->item-type "Not a list type: ~s" ty)])))
 
 (define type-to-external-form
   (lambda (ty)
