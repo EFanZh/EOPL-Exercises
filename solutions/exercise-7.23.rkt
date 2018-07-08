@@ -43,6 +43,12 @@
       [proc-type (t1 t2) #t]
       [else #f])))
 
+(define pair-type?
+  (lambda (ty)
+    (cases type ty
+      [pair-type (t1 t2) #t]
+      [else #f])))
+
 (define tvar-type?
   (lambda (ty)
     (cases type ty
@@ -60,6 +66,18 @@
     (cases type ty
       [proc-type (arg-type result-type) result-type]
       [else (eopl:error 'proc-type->result-types "Not a proc type: ~s" ty)])))
+
+(define pair-type->first-type
+  (lambda (ty)
+    (cases type ty
+      [pair-type (ty1 ty2) ty1]
+      [else (eopl:error 'pair-type->first-type "Not a pair type: ~s" ty)])))
+
+(define pair-type->second-type
+  (lambda (ty)
+    (cases type ty
+      [pair-type (ty1 ty2) ty2]
+      [else (eopl:error 'pair-type->second-type "Not a pair type: ~s" ty)])))
 
 (define type-to-external-form
   (lambda (ty)
@@ -255,6 +273,15 @@
                                                                              subst
                                                                              exp)])
                                                          subst))]
+            [(and (pair-type? ty1) (pair-type? ty2)) (let ([subst (unifier (pair-type->first-type ty1)
+                                                                           (pair-type->first-type ty2)
+                                                                           subst
+                                                                           exp)])
+                                                       (let ([subst (unifier (pair-type->second-type ty1)
+                                                                             (pair-type->second-type ty2)
+                                                                             subst
+                                                                             exp)])
+                                                         subst))]
             [else (report-unification-failure ty1 ty2 exp)]))))
 
 ;; Inferrer.
@@ -334,13 +361,13 @@
                                                        [an-answer (ty2 subst) (an-answer (pair-type ty1 ty2) subst)])])]
       [unpair-exp (var1 var2 exp1 body)
                   (cases answer (type-of exp1 tenv subst)
-                    [an-answer (exp-ty subst) (cases type exp-ty
-                                                [pair-type (ty1 ty2) (type-of body
-                                                                              (extend-tenv var2
-                                                                                           ty2
-                                                                                           (extend-tenv var1 ty1 tenv))
-                                                                              subst)]
-                                                [else (eopl:error 'type-of "Not a pair type: ~s" exp1)])])])))
+                    [an-answer (exp-ty subst) (let ([ty1 (fresh-tvar-type)]
+                                                    [ty2 (fresh-tvar-type)])
+                                                (type-of body
+                                                         (extend-tenv var2
+                                                                      ty2
+                                                                      (extend-tenv var1 ty1 tenv))
+                                                         (unifier (pair-type ty1 ty2) exp-ty subst exp1)))])])))
 
 (define type-of-program
   (lambda (pgm)

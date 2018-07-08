@@ -262,3 +262,9 @@
 (check-exn exn:fail?
            (λ ()
              (run "unpair a b = 1 in a")))
+
+(check-equal? (check "proc (x : ?)
+                        if zero?(5)
+                        then newpair(3, 4)
+                        else newpair(4, x)")
+              '(int -> (pairof int * int)))
